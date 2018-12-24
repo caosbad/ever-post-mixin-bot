@@ -1,5 +1,5 @@
 import {
-  SessionStorage,
+  // SessionStorage,
   LocalStorage,
   Notify,
   Dialog,
@@ -157,7 +157,8 @@ export const getLocal = key => {
 
 // get storage (session/local) with different device
 export const getStorage = () => {
-  return isDesktop() ? SessionStorage : LocalStorage
+  // return isDesktop() ? SessionStorage : LocalStorage
+  return LocalStorage
 }
 // sessionstorage functions
 export const setCache = (key, value) => {

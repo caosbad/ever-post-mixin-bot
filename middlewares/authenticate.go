@@ -16,6 +16,8 @@ var whitelist = [][2]string{
 	{"GET", "^/$"},
 	{"POST", "^/auth$"},
 	{"GET", "^/posts"},
+	{"GET", "^/posts/.*"},
+	{"GET", "^/user/.*"},
 }
 
 type contextValueKey struct{ int }

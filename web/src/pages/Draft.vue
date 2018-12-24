@@ -3,45 +3,50 @@
     <div class="row justify-center q-py-lg">
       <div class="col-lg-9 col-xs-11 col-md-10 form">
         <q-field
-          class="col-8"
-          :label="$t('TITLE')"
+          class="col-8 no-shadow q-px-sm"
           :label-width="2"
-          :error="$v.post.title.$error"
-          :error-label="$t('VAL_TITLE_INVALID')"
-          :count="256"
-          :helper="$t('VAL_TITLE_POST')"
+          :count="64"
         >
           <q-input
-            @blur="$v.post.title.$touch"
             v-model="post.title"
-            n
-            clearable
+            :float-label="$t('TITLE')"
+            color="gray"
+            hide-underline
+            :loading="loading"
           />
         </q-field>
-        <q-field
-          class="col-8 q-mb-lg"
-          :label="$t('NAME')"
+        <!-- <q-field
+          class="col-8 q-mb-lg q-px-sm"
           :label-width="2"
-          :error="$v.post.name.$error"
-          :count="20"
-          :error-label="$t('VAL_URL_INVALID')"
-          :helper="$t('VAL_URL_POST')"
+          :count="16"
         >
           <q-input
-            @blur="$v.post.name.$touch"
             v-model="post.name"
+            :float-label="$t('NAME')"
+            color="gray"
             clearable
+            hide-underline
+          />
+        </q-field> -->
+        <q-field
+          class="col-8 q-mb-lg q-px-sm"
+          :label-width="2"
+          :count="140"
+        >
+          <q-input
+            v-model="post.description"
+            :float-label="$t('DESC')"
+            type="textarea"
+            color="gray"
+            hide-underline
           />
         </q-field>
-        <q-field
-          :error="$v.post.content.$error"
-          :error-label="$t('VAL_CONTENT_INVALID')"
-        >
+        <q-field class="q-mb-lg">
           <m-editor
             :language="locale"
-            v-model="content"
-            class="m-t-1"
-            @change="change"
+            v-model="post.content"
+            class=" "
+            @save="onSave"
             :placeholder="$t('NEW_POST_PLACEHOLDER')"
           />
         </q-field>
@@ -87,9 +92,10 @@ import {
   maxLength,
   minLength
 } from 'vuelidate/lib/validators'
-// import { mapActions, mapGetters } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import { toastError } from '../utils/util'
 import MEditor from '../components/MEditor'
+import _ from 'lodash'
 
 export default {
   name: 'Draft',
@@ -107,10 +113,12 @@ export default {
     return {
       post: {
         title: '',
-        name: '',
-        content: ''
+        content: '',
+        description: ''
       },
-      postHtml: ''
+      postId: '',
+      htmlContent: '',
+      loading: false
     }
   },
   validations: {
@@ -118,37 +126,111 @@ export default {
     post: {
       title: {
         required,
-        maxLength: maxLength(256),
+        maxLength: maxLength(64),
         minLength: minLength(5)
       },
-      name: {
-        maxLength: maxLength(20),
-        minLength: minLength(3)
-      },
+      // name: {
+      //   maxLength: maxLength(16),
+      //   minLength: minLength(3)
+      // },
       content: {
         required,
         minLength: minLength(10)
+      },
+      description: {
+        maxLength: maxLength(140)
       }
+    }
+  },
+  mounted() {
+    if (this.userInfo) {
+      let {id} = this.$route.params
+      if (id) this.initData(id)
+    } else {
+
     }
   },
   methods: {
-     change(val, html) {
-      this.post.content = val
-      this.postHtml = html
-      // this.$v.post.content.$touch()
+    ...mapActions(['getPost', 'send']),
+    async initData(id) {
+      let post = await this.getPost(id)
+      this.checkEditPromise(post)
+      if (post) {
+        this.post = post
+      } else {
+        this.$router.push('/')
+      }
     },
-    post() {
-      this.$v.post.touch()
-      if (!this.$v.post.valid) {
-        toastError(this.$t('ERROR'))
+    //  onChange(val, html) {
+    //   this.post.content = val
+    //   this.htmlContent = html
+    //   // this.$v.post.content.$touch()
+    // },
+    onSave(val, html) {
+        this.post.content = val
+        if (!this.checkForm() || this.loading) return
+        this.loading = true
+        if (this.isNewDraft) {
+          this.createDraft(val)
+        } else {
+         this.updatePost(val, html)
+        }
+    },
+    async createDraft(val) {
+      try {
+        let post = this.post
+        let res = await this.send({method: 'createDraft', params: {...post, content: val}})
+          if (res) {
+            this.post = res
+          }
+          this.reset()
+      } catch (e) {
+
+      }
+    },
+    async updatePost(val, htmlContent) {
+      try {
+        let post = this.post
+        let res = await this.send({method: this.isTelegraph ? 'updatePost' : 'updateDraft', params: {...post, id: post.post_id, content: val, htmlContent}})
+         if (res) {
+            this.post = res
+         }
+         this.reset()
+      } catch (e) {
+        console.log(e)
+      }
+    },
+    reset() {
+      _.delay(() => { this.loading = false }, 3000)
+    },
+    publish() {
+      if (this.checkForm()) {
+
       }
       // let article = document.createElement('div')
       // article.innerHTML = this.postHtml
+    },
+    checkForm() {
+      this.$v.post.$touch()
+      if (this.$v.post.$invalid) {
+        toastError(this.$t('ERROR'))
+        return false
+      }
+      return true
+    },
+    checkEditPromise(post) {
+      if (this.userInfo.user_id !== post.user_id) {
+        this.$router.push('/post/' + post.post_id)
+      }
     }
   },
   computed: {
-    editor() {
-      return this.$refs.myQuillEditor.quill
+    ...mapGetters(['userInfo']),
+    isNewDraft() {
+      return !this.post.post_id
+    },
+    isTelegraph() {
+      return !!this.post.path
     },
     locale() {
       let isZH = this.$i18n.locale === 'zh'

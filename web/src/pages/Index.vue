@@ -94,7 +94,7 @@ export default {
   methods: {
     ...mapActions(['getAllPost', 'getDrafts', 'getMyPosts']),
     async getPosts() {
-      let res = await this.getDrafts({
+      let res = await this.getAllPost({
         offset: this.offset,
         limit: this.pagination.limit
       })

@@ -92,7 +92,7 @@ func (impl *postsImpl) updatePost(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 	current := middlewares.CurrentUser(r)
-
+	body.PostId = postId
 
 	if post, err := models.UpdatePost(r.Context(), current, body); err != nil {
 		views.RenderErrorResponse(w, r, err)
@@ -114,6 +114,7 @@ func (impl *postsImpl) updateDraft(w http.ResponseWriter, r *http.Request, param
 		return
 	}
 	current := middlewares.CurrentUser(r)
+	body.PostId = postId
 
 
 	if post, err := models.UpdateDraft(r.Context(), current, body); err != nil {

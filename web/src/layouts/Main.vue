@@ -25,7 +25,17 @@
           :src="userAvatar"
           alt=""
         >
+
         <q-btn
+          v-if="this.userInfo"
+          class="q-mx-sm"
+          flat
+          round
+          dense
+          @click="$router.push('/draft')"
+          icon="add_circle_outline"
+        />
+        <!-- <q-btn
           v-if="this.userInfo"
           class="q-mx-sm"
           flat
@@ -33,7 +43,17 @@
           dense
           @click="showRight = !showRight"
           icon="menu"
+        /> -->
+        <q-btn
+          v-else
+          class="q-mx-sm"
+          flat
+          round
+          dense
+          @click="fetchUser"
+          icon="account_circle"
         />
+
       </q-toolbar>
 
     </q-layout-header>
@@ -59,6 +79,14 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+    <q-modal v-model="paymentModal">
+      <h4>Basic Modal</h4>
+      <q-btn
+        color="primary"
+        @click="opened = false"
+        label="Close"
+      />
+    </q-modal>
   </q-layout>
 </template>
 
@@ -79,7 +107,8 @@ import {
 // import {BOT} from '../utils/constants'
 import {
   mapActions,
-  mapGetters
+  mapGetters,
+mapMutations
 } from 'vuex'
 export default {
   name: 'MyLayout',
@@ -98,37 +127,42 @@ export default {
       leftDrawerOpen: this.$q.platform.is.desktop,
       showRight: false,
       showLeft: false,
-      locale: 'en'
+      locale: 'en',
+      paymentModal: false
     }
   },
   async created() {
     const code = this.$route.query.code
     if (code === undefined || code === '') {
-      await this.fetchUser()
+      // await this.fetchUser()
+      debugger
+      let user = getCache('account')
+      if (user) this.setAccount(user)
     } else {
       this.isLoading = true
       await this.authUser(code)
     }
+    this.initEvent()
   },
   mounted() {
-    // let user = getCache('account')
-    // console.log(user)
     let lang = getCache('lang') || 'en'
     this.setLang(lang)
   },
+  destroyed() {
+    this.cancelEvent()
+  },
   methods: {
-    ...mapActions(['getUserInfo', 'auth']),
+    ...mapActions(['getUserInfo', 'auth', 'fetch']),
+    ...mapMutations(['setAccount']),
     async authUser(code) {
       let res = await this.auth(code)
       if (res) {
-        //  this.fetchUser()
+         this.fetchUser()
         this.isLoading = false
-        console.log(res)
       }
     },
     async fetchUser() {
       await this.getUserInfo()
-      console.log(this.$store.state)
     },
     setLang(lang) {
       this.locale = this.$i18n.locale = lang
@@ -136,10 +170,21 @@ export default {
         this.$q.i18n.set(lang.default)
       })
       setCache('lang', lang)
+    },
+    initEvent() {
+      this.$root.$on('pay', this.openPaymenModal)
+    },
+    cancelEvent() {
+      this.$root.$off('pay', this.openPaymenModal)
+    },
+    async openPaymenModal(callback) {
+      if (this.getAssets.length) {
+
+      }
     }
   },
   computed: {
-    ...mapGetters(['userInfo']),
+    ...mapGetters(['userInfo', 'getAssets']),
     userAvatar() {
       if (this.userInfo) {
         let avatarUrl = this.userInfo.avatar_url

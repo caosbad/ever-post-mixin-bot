@@ -19,12 +19,13 @@
                 rounded
                 outline
                 size="sm"
-                :to="'/draft/'+post.post_id"
+                :to="'/post/'+post.post_id+'/edit'"
               />
               <q-btn
                 v-if="!isPub"
                 :label="$t('PUBLISH')"
                 color="info"
+                @click="doPublish"
                 outline
                 rounded
                 size="sm"
@@ -124,7 +125,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions(['getPost', 'getUser', 'fetch']),
+    ...mapActions(['getPost', 'getUser', 'fetch', 'send']),
     async initData(id) {
       try {
         let post = await this.getPost(id)
@@ -180,6 +181,21 @@ export default {
       } catch (e) {
         // TODO
         console.log(e)
+      }
+    },
+    doPublish() {
+      this.$root.$emit('pay', () => this.publish)
+    },
+    async publish() {
+      try {
+        let post = this.post
+        let res = await this.send({method: 'updatePost', params: {...post, id: post.post_id}})
+        if (res) {
+          this.post = res
+          // todo
+        }
+      } catch (e) {
+
       }
     }
   },

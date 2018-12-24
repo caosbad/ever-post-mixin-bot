@@ -4,6 +4,7 @@
       :value="value"
       :placeholder="placeholder"
       @change="change"
+      @save="save"
       :subfield="false"
       :defaultOpen="defaultOpen"
       :toolbarsFlag="toolbarsFlag"
@@ -33,8 +34,11 @@ export default {
   },
   mounted() {},
   methods: {
-    change(val) {
-      this.$emit('change', val)
+    change(val, html) {
+      this.$emit('change', val, html)
+    },
+    save(val, html) {
+      this.$emit('save', val, html)
     }
   },
   computed: {
@@ -65,7 +69,7 @@ export default {
           // undo: true, // 上一步
           // redo: true, // 下一步
           // trash: true, // 清空
-          // save: true, // 保存（触发events中的save事件）
+          save: true, // 保存（触发events中的save事件）
           // navigation: true, // 导航目录
           // alignleft: true, // 左对齐
           // aligncenter: true, // 居中

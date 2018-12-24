@@ -35,6 +35,19 @@ export default {
       return null
     }
   },
+  getUserAssets: async ({
+    commit,
+    state
+  }, params) => {
+    let res = await api.getAssets()
+    if (res.data) {
+      let assets = res.data.data
+      state.assets = assets
+      return assets
+    } else {
+      return null
+    }
+  },
   getAllPost: async ({
     commit,
     state
@@ -112,6 +125,22 @@ export default {
     }
   },
   fetch: async ({
+    commit,
+    state
+  }, payload) => {
+    let {
+      method,
+      params
+    } = payload
+    let res = await api[method](params)
+    if (res.data) {
+      let data = res.data.data
+      return data
+    } else {
+      return null
+    }
+  },
+  send: async ({
     commit,
     state
   }, payload) => {

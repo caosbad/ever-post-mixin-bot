@@ -44,10 +44,8 @@ module.exports = function (ctx) {
     },
     // framework: 'all' --- includes everything; for dev only!
     framework: {
-      components: [],
-      directives: [
-        'Ripple'
-      ],
+      components: ['QModal'],
+      directives: [],
       // Quasar plugins
       plugins: [
         'Notify',

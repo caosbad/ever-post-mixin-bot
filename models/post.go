@@ -56,7 +56,7 @@ type PostBody struct {
 	Title           string `json:"title"`
 	Description     string `json:"description"`
 	Content         string `json:"content"`
-	MarkdownContent string `json:"markdown"`
+	HtmlContent 	string `json:"htmlContent"`
 	TraceId         string `json:"traceId"`
 	IpfsId          string `json:"ipfsId"`
 }
@@ -100,7 +100,7 @@ func CreateDraft(ctx context.Context, user *User, title, description, content, m
 func PublishPost(ctx context.Context, user *User, body PostBody) (*Post, error) {
 	// get telegraph account
 	account, err := FillTelegraphAccountWithUser(user)
-	contentFormated, err := telegraph.ContentFormat(body.Content)
+	contentFormated, err := telegraph.ContentFormat(body.HtmlContent)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func PublishPost(ctx context.Context, user *User, body PostBody) (*Post, error) 
 	}, true)
 
 	if err != nil {
-		//return nil, err
+		return nil, err
 	}
 
 	post := &Post{
@@ -121,7 +121,7 @@ func PublishPost(ctx context.Context, user *User, body PostBody) (*Post, error) 
 		TelegraphUrl: page.AuthorURL,
 		Description:  page.Description,
 		Path:         page.Path,
-		Content:      body.MarkdownContent,
+		Content:      body.Content,
 		UpdatedAt:    time.Now(),
 		TraceId:      body.TraceId,
 	}
@@ -150,12 +150,12 @@ func UpdatePost(ctx context.Context, user *User, body PostBody) (*Post, error) {
 		post.Description = body.Description
 		page.Description = body.Description
 	}
-	if body.MarkdownContent != "" {
-		post.Content = body.MarkdownContent
+	if body.Content != "" {
+		post.Content = body.Content
 		post.UpdatedAt = time.Now()
 	}
-	if body.Content != "" {
-		contentFormated, err := telegraph.ContentFormat(body.Content)
+	if body.HtmlContent != "" {
+		contentFormated, err := telegraph.ContentFormat(body.HtmlContent)
 		if err != nil {
 			return nil, err
 		}
@@ -196,11 +196,10 @@ func UpdateDraft(ctx context.Context, user *User, body PostBody) (*Post, error) 
 	if body.Description != "" {
 		post.Description = body.Description
 	}
-	if body.MarkdownContent != "" {
-		post.Content = body.MarkdownContent
+	if body.Content != "" {
+		post.Content = body.Content
 		post.UpdatedAt = time.Now()
 	}
-	post.UpdatedAt = time.Now()
 	//if body.IpfsId != "" {
 	//	post.IpfsId = body.IpfsId
 	//}

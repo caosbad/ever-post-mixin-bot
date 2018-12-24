@@ -1,10 +1,10 @@
 {
-  "name": "asch-explorer-frontend",
+  "name": "ever-post",
   "version": "1.0.0",
   "description": "A Quasar Framework app",
-  "productName": "ASCH explorer",
-  "cordovaId": "com.org.asch.explorer",
-  "author": "ASCH",
+  "productName": "EverPost",
+  "cordovaId": "com.org.ever.post",
+  "author": "Caos",
   "private": true,
   "scripts": {
     "lint": "eslint --ext .js,.vue src",

@@ -18,44 +18,47 @@ const serverHost = 'http://localhost:7008'
 
 const BOT = {
   clientId: 'ee7ef479-e9e7-44ba-9755-6be4e1d826d7',
-  // scope: 'PROFILE:READ+ASSETS:READ',
-  scope: 'PROFILE:READ',
+  scope: 'PROFILE:READ+ASSETS:READ',
+  // scope: 'PROFILE:READ',
   clientSecret: 'f245bfa9bb79b5e076e2f905e2d66f7c658057d069a2d28c704aa263db87c0e8'
 }
 
 const urls = {
   me: () => {
-    return serverHost + '/me'
+    return `${serverHost}/me`
   },
   getUser: () => {
-    return serverHost + '/user/:id'
+    return `${serverHost}/user/:id`
   },
   auth: () => {
-    return serverHost + '/auth'
+    return `${serverHost}/auth`
   },
   getToken: () => {
-    return mixinHost + '/oauth/token'
+    return `${mixinHost}/oauth/token`
   },
   verify: (traceId) => {
-    return `${mixinHost}/verify/${traceId}`
+    return `${mixinHost}/verify/:id`
   },
   assets: () => {
-    return mixinHost + '/assets'
+    return `${mixinHost}/assets`
   },
   asset: (assetId) => {
-    return `${mixinHost}/assets/${assetId}`
+    return `${mixinHost}/assets/:id`
   },
-  allPosts: () => {
+  getPosts: () => {
     return `${serverHost}/posts`
+  },
+  posts: () => {
+    return `${serverHost}/posts/:id`
   },
   getDrafts: () => {
     return `${serverHost}/drafts`
   },
+  drafts: () => {
+    return `${serverHost}/drafts/:id`
+  },
   post: () => {
     return `${serverHost}/post`
-  },
-  getPost: () => {
-    return `${serverHost}/posts/:id`
   },
   myPost: () => {
     return `${serverHost}/myPosts`

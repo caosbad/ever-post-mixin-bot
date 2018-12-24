@@ -65,38 +65,47 @@ const api = {}
 api.getMe = () => {
   return fetch(urls.me(), 'get')
 }
-api.verifyPayment = (traceId) => {
-  return fetch(urls.verify(traceId), 'get')
+api.verifyPayment = (params) => {
+  return fetch(urls.verify(), 'get', params)
 }
 api.auth = (code) => {
   return fetch(urls.auth(), 'post', {
     code
   })
 }
-api.getAssets = () => {
-  return fetch(urls.assets(), 'get')
+api.getAssets = (params) => {
+  return fetch(urls.assets(), 'get', params)
 }
-api.getAssets = (assetId) => {
-  return fetch(urls.asset(assetId), 'get')
+api.getAsset = (params) => {
+  return fetch(urls.asset(), 'get', params)
 }
-api.getMyPosts = () => {
-  return fetch(urls.allPosts(), 'get')
+api.getMyPosts = (params) => {
+  return fetch(urls.getPosts(), 'get', params)
 }
-api.getMyDrafts = () => {
-  return fetch(urls.getDrafts(), 'get')
+api.getMyDrafts = (params) => {
+  return fetch(urls.getDrafts(), 'get', params)
 }
+
 api.getAllPosts = (params) => {
-  return fetch(urls.allPost(), 'get', params)
+  return fetch(urls.getPosts(), 'get', params)
 }
 api.getPost = (params) => {
-  return fetch(urls.getPost(), 'get', params)
+  return fetch(urls.posts(), 'get', params)
 }
 api.post = (params) => {
-  return fetch(urls.allPost(), 'post', params)
+  return fetch(urls.posts(), 'post', params)
 }
+api.savePost = (params) => {
+  return fetch(urls.posts(), 'post', params)
+}
+api.updatePost = (params) => {
+  return fetch(urls.posts(), 'put', params)
+}
+
 api.getUser = (params) => {
   return fetch(urls.getUser(), 'get', params)
 }
+
 api.follow = (params) => {
   return fetch(urls.subscriber(), 'post', params)
 }
@@ -105,6 +114,13 @@ api.unFollow = (params) => {
 }
 api.isSub = (params) => {
   return fetch(urls.subscriber(), 'get', params)
+}
+
+api.createDraft = (params) => {
+  return fetch(urls.getDrafts(), 'post', params)
+}
+api.updateDraft = (params) => {
+  return fetch(urls.drafts(), 'put', params)
 }
 
 // api.deposit = params => {
