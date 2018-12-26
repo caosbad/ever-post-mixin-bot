@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/go-pg/pg"
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 
 	"github.com/MixinNetwork/bot-api-go-client"
 	"github.com/caosbad/ever-post-mixin-bot/config"
 	"github.com/caosbad/ever-post-mixin-bot/session"
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"gitlab.com/toby3d/telegraph"
 )
 
@@ -39,7 +39,7 @@ type User struct {
 	FullName            string    `sql:"full_name"`
 	AvatarURL           string    `sql:"avatar_url"`
 	CreatedAt           time.Time `sql:"created_at,notnull"`
-	TelegraphToken      string 		`sql:"telegraph_token"`
+	TelegraphToken      string    `sql:"telegraph_token"`
 	AuthenticationToken string    `sql:"-"`
 }
 
@@ -48,7 +48,7 @@ var userCols = []string{"user_id", "access_token", "full_name", "avatar_url", "t
 func AuthenticateUserByOAuth(ctx context.Context, authorizationCode string) (*User, error) {
 	accessToken, scope, err := bot.OAuthGetAccessToken(ctx, config.ClientId, config.ClientSecret, authorizationCode, "")
 	if err != nil {
-	    fmt.Print(err)
+		fmt.Print(err)
 		return nil, session.ServerError(ctx, err)
 	}
 	if !strings.Contains(scope, "PROFILE:READ") {
@@ -82,7 +82,7 @@ func AuthenticateUserByOAuth(ctx context.Context, authorizationCode string) (*Us
 			ShortName:  me.FullName,
 			AuthorName: me.FullName,
 		})
-	if err != nil {
+		if err != nil {
 			return nil, err
 		}
 		user, err = user.updateProfile(ctx, accessToken, me.FullName, me.AvatarURL)
@@ -106,7 +106,8 @@ func generateAuthenticationToken(ctx context.Context, userId, accessToken string
 	sum := sha256.Sum256([]byte(accessToken))
 	return token.SignedString(sum[:])
 }
-// find user info with authenticationToken and query user info 
+
+// find user info with authenticationToken and query user info
 func AuthenticateUserByToken(ctx context.Context, authenticationToken string) (*User, error) {
 	var user *User
 	var queryErr error
@@ -147,12 +148,12 @@ func createUser(ctx context.Context, userId, accessToken, fullName, avatarURL, t
 		avatarURL = DefaultAvatar
 	}
 	user := &User{
-		UserId:      userId,
-		FullName:    fullName,
-		AvatarURL:   avatarURL,
+		UserId:         userId,
+		FullName:       fullName,
+		AvatarURL:      avatarURL,
 		TelegraphToken: telegraphToken,
-		AccessToken: accessToken,
-		CreatedAt:   time.Now(),
+		AccessToken:    accessToken,
+		CreatedAt:      time.Now(),
 	}
 	if err := session.Database(ctx).Insert(user); err != nil {
 		return nil, session.TransactionError(ctx, err)
@@ -181,4 +182,15 @@ func FindUserById(ctx context.Context, userId string) (*User, error) {
 		return nil, session.TransactionError(ctx, err)
 	}
 	return user, nil
+}
+
+func Assets(ctx context.Context, token string) ([]bot.Asset, error) {
+	if assets, err := bot.AssetList(ctx, token); err != nil {
+		return nil, err
+	} else if assets == nil {
+		return nil, nil
+	} else {
+		return assets, nil
+	}
+
 }

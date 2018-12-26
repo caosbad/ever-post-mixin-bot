@@ -46,6 +46,8 @@ const fetch = (url, method, data = {}, postHeaders) => {
     res = axios.post(url, data, postHeaders)
   } else if (type === 'put') {
     res = axios.put(url, data, postHeaders)
+  } else if (type === 'delete') {
+    res = axios.delete(url, data, postHeaders)
   }
   return res
   // return axios[type](url, params)
@@ -65,7 +67,7 @@ const api = {}
 api.getMe = () => {
   return fetch(urls.me(), 'get')
 }
-api.verifyPayment = (params) => {
+api.verify = (params) => {
   return fetch(urls.verify(), 'get', params)
 }
 api.auth = (code) => {
@@ -101,6 +103,9 @@ api.savePost = (params) => {
 api.updatePost = (params) => {
   return fetch(urls.posts(), 'put', params)
 }
+api.publishPost = (params) => {
+  return fetch(urls.posts(), 'post', params)
+}
 
 api.getUser = (params) => {
   return fetch(urls.getUser(), 'get', params)
@@ -121,6 +126,9 @@ api.createDraft = (params) => {
 }
 api.updateDraft = (params) => {
   return fetch(urls.drafts(), 'put', params)
+}
+api.deleteDraft = (params) => {
+  return fetch(urls.drafts(), 'delete', params)
 }
 
 // api.deposit = params => {

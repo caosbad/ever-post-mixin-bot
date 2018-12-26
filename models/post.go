@@ -52,44 +52,26 @@ type Post struct {
 
 // request body
 type PostBody struct {
-	PostId          string `json:"id"`
-	Title           string `json:"title"`
-	Description     string `json:"description"`
-	Content         string `json:"content"`
-	HtmlContent 	string `json:"htmlContent"`
-	TraceId         string `json:"traceId"`
-	IpfsId          string `json:"ipfsId"`
+	PostId      string `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Content     string `json:"content"`
+	HtmlContent string `json:"htmlContent"`
+	TraceId     string `json:"traceId"`
+	IpfsId      string `json:"ipfsId"`
 }
 
-var postCols = []string{"post_id", "title", "description", "content", "path", "user_id", "trace_id"}
+var postCols = []string{"post_id", "title", "description", "content", "path", "user_id", "trace_id", "telegraph_url"}
 
-func CreateDraft(ctx context.Context, user *User, title, description, content, markdown string) (*Post, error) {
-	// get telegraph account
-	/*account, err := FillTelegraphAccountWithUser(user)
-	contentFormated, err := telegraph.ContentFormat(content)
-	if err != nil {
-		return nil, err
-	}
-	page, err := account.CreatePage(&telegraph.Page{
-		Title:       title,
-		AuthorName:  user.FullName,
-		Content:     contentFormated,
-		Description: description,
-	}, true)
-
-	if err != nil {
-		return nil, err
-	}*/
+func CreateDraft(ctx context.Context, user *User, title, description, content string) (*Post, error) {
 
 	post := &Post{
-		PostId: client.UuidNewV4().String(),
-		UserId: user.UserId,
-		Title:  title,
-		//TelegraphUrl: page.AuthorURL,
+		PostId:      client.UuidNewV4().String(),
+		UserId:      user.UserId,
+		Title:       title,
 		Description: description,
-		//Path:         page.Path,
-		Content:   markdown,
-		CreatedAt: time.Now(),
+		Content:     content,
+		CreatedAt:   time.Now(),
 	}
 	if err := session.Database(ctx).Insert(post); err != nil {
 		return nil, session.TransactionError(ctx, err)
@@ -116,16 +98,13 @@ func PublishPost(ctx context.Context, user *User, body PostBody) (*Post, error) 
 	}
 
 	post := &Post{
-		UserId:       user.UserId,
-		Title:        page.Title,
-		TelegraphUrl: page.AuthorURL,
+		PostId:       body.PostId,
+		TelegraphUrl: page.URL,
 		Description:  page.Description,
 		Path:         page.Path,
-		Content:      body.Content,
 		UpdatedAt:    time.Now(),
-		TraceId:      body.TraceId,
 	}
-	if _, err := session.Database(ctx).Model(post).Column("title", "telegrah_url", "path", "description", "content", "updated_at").WherePK().Update(); err != nil {
+	if _, err := session.Database(ctx).Model(post).Column("telegraph_url", "path", "updated_at").WherePK().Update(); err != nil {
 		return nil, session.TransactionError(ctx, err)
 	}
 	return post, nil
@@ -153,6 +132,9 @@ func UpdatePost(ctx context.Context, user *User, body PostBody) (*Post, error) {
 	if body.Content != "" {
 		post.Content = body.Content
 		post.UpdatedAt = time.Now()
+	}
+	if body.TraceId != "" {
+		post.TraceId = body.TraceId
 	}
 	if body.HtmlContent != "" {
 		contentFormated, err := telegraph.ContentFormat(body.HtmlContent)
@@ -223,7 +205,7 @@ func UpdatePostTraceId(ctx context.Context, post *Post) (*Post, error) {
 
 func DeleteDraft(ctx context.Context, user *User, postId string) error {
 
-	if post, err := FindPostByPostId(ctx, postId); err != nil {
+	if post, err := FindPostByPostId(ctx, postId); err != nil || post.UserId != user.UserId {
 		return err
 	} else if post.Path != "" || post.IpfsId != "" {
 		return errors.New("Post already published.")
@@ -238,7 +220,7 @@ func DeleteDraft(ctx context.Context, user *User, postId string) error {
 
 func VerifyTrace(ctx context.Context, user *User, traceId string) (*Post, error) {
 	var post Post
-	if _, err := session.Database(ctx).QueryOne(&post, `SELECT bot_id, user_id, trace_id, expire_at, created_at FROM posts WHERE trace_id = ? `, traceId); err == pg.ErrNoRows {
+	if _, err := session.Database(ctx).QueryOne(&post, `SELECT post_id, user_id, trace_id, content, created_at FROM posts WHERE trace_id = ? `, traceId); err == pg.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, session.TransactionError(ctx, err)
@@ -250,6 +232,18 @@ func FindAllPosts(ctx context.Context, offset, limit int) ([]*Post, error) {
 	var posts []*Post
 	var orderExp = "created_at DESC"
 	err := session.Database(ctx).Model(&posts).Limit(limit).Offset(offset).Order(orderExp).Where("trace_id IS NOT NULL AND path IS NOT NULL").Select()
+	if err == pg.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, session.TransactionError(ctx, err)
+	}
+	return posts, nil
+}
+
+func FindAllPostsByUser(ctx context.Context, user *User, offset, limit int) ([]*Post, error) {
+	var posts []*Post
+	var orderExp = "created_at DESC"
+	err := session.Database(ctx).Model(&posts).Limit(limit).Offset(offset).Order(orderExp).Where("trace_id IS NOT NULL AND path IS NOT NULL AND user_id = ?", user.UserId).Select()
 	if err == pg.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
@@ -274,7 +268,7 @@ func FindTelegraphPostsByUser(ctx context.Context, user *User, offset, limit int
 func FindDraftsByUser(ctx context.Context, user *User, offset, limit int) ([]*Post, error) {
 	var drafts []*Post
 	var orderExp = "created_at DESC"
-	err := session.Database(ctx).Model(&drafts).Limit(limit).Offset(offset).Order(orderExp).Where("trace_id IS NULL AND path IS NULL").Select()
+	err := session.Database(ctx).Model(&drafts).Limit(limit).Offset(offset).Order(orderExp).Where("trace_id IS NULL AND path IS NULL AND user_id = ?", user.UserId).Select()
 	if err == pg.ErrNoRows {
 		return nil, nil
 	} else if err != nil {

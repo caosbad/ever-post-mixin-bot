@@ -48,12 +48,11 @@ func (r ResponseMessage) OnMessage(ctx context.Context, msg bot.MessageView, uid
 		if err != nil {
 			return bot.BlazeServerError(ctx, err)
 		}
-		err = handleTransfer(ctx, transfer, msg.UserId)
-		if err == nil {
-			//sendPaidMessage(ctx, r.blazeClient, msg)
-
+		_, err = handleTransfer(ctx, transfer, msg.UserId, r.blazeClient)
+		if err != nil {
+			return bot.BlazeServerError(ctx, err)
+		} else {
 			return nil
-
 		}
 	}
 	if msg.Category == bot.MessageCategoryPlainText {
@@ -84,40 +83,48 @@ func handleText(ctx context.Context, client *bot.BlazeClient, msg bot.MessageVie
 }
 
 // pay message incliude post,
-func handleTransfer(ctx context.Context, transfer bot.TransferView, userId string) error {
+func handleTransfer(ctx context.Context, transfer bot.TransferView, userId string, client *bot.BlazeClient) (string, error) {
 
-	// _, err := uuid.FromString(transfer.TraceId)
-	// if err != nil {
-	// 	return nil
-
-	// no pain no gain
 	if _, err := uuid.FromString(transfer.Memo); err == nil {
 		if post, err := models.FindPostByPostId(ctx, transfer.Memo); err != nil {
-		} else if post.UserId == transfer.CounterUserId && post.TraceId == "" { // post article payment
+			return "", bot.BlazeServerError(ctx, err)
+		} else if post.UserId == transfer.CounterUserId && post.Path == "" { // post article payment
 			post.TraceId = transfer.TraceId
 			_, err = models.UpdatePostTraceId(ctx, post)
 			if err != nil {
-				return err
+				return "", bot.BlazeServerError(ctx, err)
 			}
+			return "payment successfully...", nil
 		} else { // vote article payment
-			_, err = models.CreateSupport(ctx, post, transfer)
-			if err != nil {
-				return err
+			if err := sendTransfer(ctx, &bot.TransferInput{
+				AssetId:     transfer.AssetId,
+				RecipientId: post.UserId,
+				Amount:      number.FromString(transfer.Amount),
+				TraceId:     uuid.Must(uuid.NewV4()).String(),
+				Memo:        "Donate from your reader.",
+			}); err != nil {
+				return "", bot.BlazeServerError(ctx, err)
+			} else if support, err := models.CreateSupport(ctx, post, transfer); err != nil || support == nil {
+				return "", bot.BlazeServerError(ctx, err)
+			} else {
+				return "Donation successfully", nil
 			}
 		}
-	} else {
-		sendTransfer(ctx, &bot.TransferInput{
-			AssetId:     transfer.AssetId,
-			RecipientId: transfer.CounterUserId,
-			Amount:      number.FromString(transfer.Amount),
-			TraceId:     uuid.Must(uuid.NewV4()).String(),
-			Memo:        "invalid transfer",
-		})
-		return bot.BlazeServerError(ctx, err)
-	}
-	//_, err = models.CreateChannelBot(ctx, userId, transfer.TraceId)
 
-	return nil
+	} else { // no pain no gain
+		//if err := sendTransfer(ctx, &bot.TransferInput{
+		//	AssetId:     transfer.AssetId,
+		//	RecipientId: transfer.CounterUserId,
+		//	Amount:      number.FromString(transfer.Amount),
+		//	TraceId:     uuid.Must(uuid.NewV4()).String(),
+		//	Memo:        "invalid transfer",
+		//}); err != nil {
+		//	return nil, bot.BlazeServerError(ctx, err)
+		//}
+		//return "Thanks for your donation...", nil
+		return "", nil
+	}
+
 }
 
 func sendTransfer(ctx context.Context, transfer *bot.TransferInput) error {
@@ -129,22 +136,27 @@ func sendTransfer(ctx context.Context, transfer *bot.TransferInput) error {
 	return nil
 }
 
-func sendPaidMessage(ctx context.Context, client *bot.BlazeClient, msg bot.MessageView) error {
-	content := `您已付费，可以开始创建频道了, 登录 https://developers.mixin.one 创建一个机器人，复制 UserId, SessionId 和 PrivateKey 提交到网页 (如何获取，请看下图)`
+func sendText(ctx context.Context, client *bot.BlazeClient, msg bot.MessageView, content string) error {
 	if err := client.SendPlainText(ctx, msg, content); err != nil {
 		return bot.BlazeServerError(ctx, err)
 	}
+	return nil
+}
 
-	imageMap := map[string]interface{}{
-		"attachment_id": "2cd57e11-a58e-4705-a47e-77f0586c915e",
-		"size":          316047,
-		"width":         1532,
-		"mime_type":     "image/jpeg",
-		"height":        1098,
-	}
-	imageData, _ := json.Marshal(imageMap)
-	if err := client.SendMessage(ctx, msg.ConversationId, msg.UserId, bot.MessageCategoryPlainImage, string(imageData), ""); err != nil {
+func sendPaidMessage(ctx context.Context, client *bot.BlazeClient, msg bot.MessageView, content string) error {
+	if err := client.SendPlainText(ctx, msg, content); err != nil {
 		return bot.BlazeServerError(ctx, err)
 	}
+	//imageMap := map[string]interface{}{
+	//	"attachment_id": "2cd57e11-a58e-4705-a47e-77f0586c915e",
+	//	"size":          316047,
+	//	"width":         1532,
+	//	"mime_type":     "image/jpeg",
+	//	"height":        1098,
+	//}
+	//imageData, _ := json.Marshal(imageMap)
+	//if err := client.SendMessage(ctx, msg.ConversationId, msg.UserId, bot.MessageCategoryPlainImage, string(imageData), ""); err != nil {
+	//	return bot.BlazeServerError(ctx, err)
+	//}
 	return nil
 }

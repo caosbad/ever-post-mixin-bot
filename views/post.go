@@ -9,15 +9,16 @@ import (
 )
 
 type PostView struct {
-	PostId      	string    `json:"post_id"`
-	Title   			string    `json:"title"`
-	Path			  	string    `json:"path"`
+	PostId        string    `json:"post_id"`
+	Title         string    `json:"title"`
+	Path          string    `json:"path"`
 	Telegraph_url string    `json:"telegraph_url"`
-	Description		string    `json:"description"`
-	IpfsId				string    `json:"ipfs_id"`
-	Content				string    `json:"content"`
-	UserId				string    `json:"user_id"`
-	CreatedAt			time.Time `json:"created_at"`
+	Description   string    `json:"description"`
+	IpfsId        string    `json:"ipfs_id"`
+	Content       string    `json:"content"`
+	UserId        string    `json:"user_id"`
+	TraceId       string    `json:"trace_id"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 // type PostsView struct {
@@ -27,15 +28,16 @@ type PostView struct {
 
 func buildPostView(post *models.Post) PostView {
 	view := PostView{
-		PostId:      		post.PostId,
-		Title:   				post.Title,
-		Path:  					post.Path,
-		Telegraph_url: 	post.TelegraphUrl,
-		Description:   	post.Description,
-		IpfsId:   			post.IpfsId,
-		Content:   			post.Content,
-		UserId:   			post.UserId,
-		CreatedAt:			post.CreatedAt,
+		PostId:        post.PostId,
+		Title:         post.Title,
+		Path:          post.Path,
+		Telegraph_url: post.TelegraphUrl,
+		Description:   post.Description,
+		IpfsId:        post.IpfsId,
+		Content:       post.Content,
+		UserId:        post.UserId,
+		TraceId:       post.TraceId,
+		CreatedAt:     post.CreatedAt,
 	}
 	return view
 }
@@ -49,15 +51,15 @@ func buildPostsView(list []*models.Post) []PostView {
 	var posts []PostView
 	for _, post := range list {
 		post := PostView{
-			PostId:      		post.PostId,
-			Title:   				post.Title,
-			Path:  					post.Path,
-			Telegraph_url: 	post.TelegraphUrl,
-			Description:   	post.Description,
-			IpfsId:   			post.IpfsId,
-			Content:   			post.Content,
-			UserId:   			post.UserId,
-			CreatedAt:			post.CreatedAt,
+			PostId:        post.PostId,
+			Title:         post.Title,
+			Path:          post.Path,
+			Telegraph_url: post.TelegraphUrl,
+			Description:   post.Description,
+			IpfsId:        post.IpfsId,
+			Content:       post.Content,
+			UserId:        post.UserId,
+			CreatedAt:     post.CreatedAt,
 		}
 		posts = append(posts, post)
 	}
@@ -72,6 +74,6 @@ func RenderPosts(w http.ResponseWriter, r *http.Request, posts []*models.Post) {
 	RenderDataResponse(w, r, buildPostsView(posts))
 }
 
-func RenderTelegraphPosts(w http.ResponseWriter, r *http.Request, list *telegraph.PageList){
+func RenderTelegraphPosts(w http.ResponseWriter, r *http.Request, list *telegraph.PageList) {
 	RenderDataResponse(w, r, list)
 }

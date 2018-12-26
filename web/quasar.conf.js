@@ -44,13 +44,14 @@ module.exports = function (ctx) {
     },
     // framework: 'all' --- includes everything; for dev only!
     framework: {
-      components: ['QModal'],
-      directives: [],
+      components: ['QModal', 'QTooltip'],
+      directives: ['CloseOverlay'],
       // Quasar plugins
       plugins: [
         'Notify',
         'SessionStorage',
-        'LocalStorage'
+        'LocalStorage',
+        'Dialog'
       ]
       // iconSet: ctx.theme.mat ? 'material-icons' : 'ionicons'
       // i18n: 'de' // Quasar language

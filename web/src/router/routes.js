@@ -34,6 +34,11 @@ export default [{
         path: 'post/:id/edit',
         name: 'edit',
         component: load('Draft')
+      },
+      {
+        path: 'posts',
+        name: 'posts',
+        component: load('Posts')
       }
     ]
   },

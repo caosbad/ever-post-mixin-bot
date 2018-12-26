@@ -3,7 +3,6 @@ CREATE TABLE IF NOT EXISTS users (
   access_token      VARCHAR(512) DEFAULT '',
   full_name         VARCHAR(512),
   avatar_url        VARCHAR(1024),
---   trace_id          VARCHAR(36),
   telegraph_token   VARCHAR(64),
   created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   expire_at         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW() 
@@ -32,4 +31,15 @@ CREATE TABLE IF NOT EXISTS subscribers (
   subscriber_id     VARCHAR(36) NOT NULL,
   created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   PRIMARY KEY (user_id, subscriber_id)
+);
+
+CREATE TABLE IF NOT EXISTS supports (
+  support_id            	VARCHAR(36) PRIMARY KEY,
+  supporter_id	        	VARCHAR(36) NOT NULL,
+  author_id					VARCHAR(36) NOT NULL,
+  post_id					VARCHAR(36) NOT NULL,
+  asset_id         			VARCHAR(36) NOT NULL,
+  trace_id         			VARCHAR(36) NOT NULL,
+  amount        			VARCHAR(256),
+  created_at        	TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );

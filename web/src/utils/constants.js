@@ -23,6 +23,16 @@ const BOT = {
   clientSecret: 'f245bfa9bb79b5e076e2f905e2d66f7c658057d069a2d28c704aa263db87c0e8'
 }
 
+const ASSETS = {
+  CNB: '965e5c6e-434c-3fa9-b780-c50f43cd955c'
+}
+
+const OPT_PIRCE = {
+  PUB: 1
+}
+
+const PAY_URL = `https://mixin.one/pay?recipient=${BOT.clientId}&`
+
 const urls = {
   me: () => {
     return `${serverHost}/me`
@@ -36,11 +46,11 @@ const urls = {
   getToken: () => {
     return `${mixinHost}/oauth/token`
   },
-  verify: (traceId) => {
-    return `${mixinHost}/verify/:id`
+  verify: () => {
+    return `${serverHost}/verify/:id`
   },
   assets: () => {
-    return `${mixinHost}/assets`
+    return `${serverHost}/assets`
   },
   asset: (assetId) => {
     return `${mixinHost}/assets/:id`
@@ -71,5 +81,8 @@ const urls = {
 export {
   I18N_OPT,
   urls,
-  BOT
+  BOT,
+  ASSETS,
+  OPT_PIRCE,
+  PAY_URL
 }

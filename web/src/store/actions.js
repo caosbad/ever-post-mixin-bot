@@ -10,14 +10,16 @@ export default {
     state
   }, args) => {
     let res = await api.getMe()
-    if (res.data) {
+    if (res.data && !res.data.error) {
       let user = res.data.data
       state.account = user
       setCache('account', user)
       state.account = user
       return user
     } else {
-      return null
+      return {
+        success: false
+      }
     }
   },
   auth: async ({
@@ -25,14 +27,16 @@ export default {
     state
   }, code) => {
     let res = await api.auth(code)
-    if (res.data) {
+    if (res.data && !res.data.error) {
       let data = res.data.data
       setCache('Authorization', data.authentication_token)
       setCache('account', data)
       state.account = data
       return data
     } else {
-      return null
+      return {
+        success: false
+      }
     }
   },
   getUserAssets: async ({
@@ -40,12 +44,18 @@ export default {
     state
   }, params) => {
     let res = await api.getAssets()
-    if (res.data) {
-      let assets = res.data.data
-      state.assets = assets
-      return assets
+    if (res.data && !res.data.error) {
+      let data = res.data.data
+      let assets = data.assets
+      if (assets.length) {
+        data.assets = assets.filter(asset => asset.balance > 0)
+      }
+      state.assets = data.assets
+      return data
     } else {
-      return null
+      return {
+        success: false
+      }
     }
   },
   getAllPost: async ({
@@ -53,11 +63,13 @@ export default {
     state
   }, params) => {
     let res = await api.getAllPosts(params)
-    if (res.data) {
+    if (res.data && !res.data.error) {
       let data = res.data.data
       return data
     } else {
-      return null
+      return {
+        success: false
+      }
     }
   },
   postContent: async ({
@@ -65,11 +77,13 @@ export default {
     state
   }, params) => {
     let res = await api.post(params)
-    if (res.data) {
+    if (res.data && !res.data.error) {
       let data = res.data.data
       return data
     } else {
-      return null
+      return {
+        success: false
+      }
     }
   },
   getDrafts: async ({
@@ -77,11 +91,13 @@ export default {
     state
   }, params) => {
     let res = await api.getMyDrafts(params)
-    if (res.data) {
+    if (res.data && !res.data.error) {
       let data = res.data.data
       return data
     } else {
-      return null
+      return {
+        success: false
+      }
     }
   },
   getMyPosts: async ({
@@ -89,11 +105,13 @@ export default {
     state
   }, params) => {
     let res = await api.getMyPosts(params)
-    if (res.data) {
+    if (res.data && !res.data.error) {
       let data = res.data.data
       return data
     } else {
-      return null
+      return {
+        success: false
+      }
     }
   },
   getPost: async ({
@@ -103,11 +121,13 @@ export default {
     let res = await api.getPost({
       id
     })
-    if (res.data) {
+    if (res.data && !res.data.error) {
       let data = res.data.data
       return data
     } else {
-      return null
+      return {
+        success: false
+      }
     }
   },
   getUser: async ({
@@ -117,11 +137,13 @@ export default {
     let res = await api.getUser({
       id
     })
-    if (res.data) {
+    if (res.data && !res.data.error) {
       let data = res.data.data
       return data
     } else {
-      return null
+      return {
+        success: false
+      }
     }
   },
   fetch: async ({
@@ -133,11 +155,13 @@ export default {
       params
     } = payload
     let res = await api[method](params)
-    if (res.data) {
+    if (res.data && !res.data.error) {
       let data = res.data.data
       return data
     } else {
-      return null
+      return {
+        success: false
+      }
     }
   },
   send: async ({
@@ -149,11 +173,13 @@ export default {
       params
     } = payload
     let res = await api[method](params)
-    if (res.data) {
+    if (res.data && !res.data.error) {
       let data = res.data.data
       return data
     } else {
-      return null
+      return {
+        success: false
+      }
     }
   }
 }

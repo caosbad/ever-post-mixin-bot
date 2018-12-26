@@ -1,8 +1,13 @@
 package routes
 
 import (
+	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"github.com/MixinNetwork/bot-api-go-client"
+	//"github.com/crossle/hacker-news-mixin-bot/config"
+	"github.com/caosbad/ever-post-mixin-bot/config"
 	"github.com/satori/go.uuid"
 	"net/http"
 	"strconv"
@@ -48,36 +53,48 @@ func (impl *postsImpl) createDraft(w http.ResponseWriter, r *http.Request, param
 	}
 	current := middlewares.CurrentUser(r)
 	// postId := params["id"]
-	if post, err := models.CreateDraft(r.Context(), current, body.Title, body.Description, body.Content, body.MarkdownContent); err != nil {
+	if post, err := models.CreateDraft(r.Context(), current, body.Title, body.Description, body.Content); err != nil {
 		views.RenderErrorResponse(w, r, err)
 	} else {
 		views.RenderPost(w, r, post)
 	}
 }
-
 
 func (impl *postsImpl) publishPost(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	postId := params["id"]
 	if _, err := uuid.FromString(postId); err != nil {
 		views.RenderErrorResponse(w, r, session.BadRequestError(r.Context()))
 		return
-	}
-
-	var body models.PostBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	} else if post, err := models.FindPostByPostId(r.Context(), postId); err != nil || post == nil {
 		views.RenderErrorResponse(w, r, session.BadRequestError(r.Context()))
-		return
+	} else if post != nil {
+		var body models.PostBody
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			views.RenderErrorResponse(w, r, session.BadRequestError(r.Context()))
+			return
+		}
+		current := middlewares.CurrentUser(r)
+		body.PostId = post.PostId
+		if post, err := models.PublishPost(r.Context(), current, body); err != nil {
+			views.RenderErrorResponse(w, r, err)
+		} else {
+			views.RenderPost(w, r, post)
+			sendNotifyToSubscribers(r.Context(), post)
+		}
 	}
-	current := middlewares.CurrentUser(r)
 
-
-	if post, err := models.PublishPost(r.Context(), current, body); err != nil {
-		views.RenderErrorResponse(w, r, err)
-	} else {
-		views.RenderPost(w, r, post)
-	}
 }
 
+func sendNotifyToSubscribers(ctx context.Context, post *models.Post) {
+	subscribers, err := models.ListSubscribers(ctx, post.UserId)
+	if err == nil {
+		for _, sub := range subscribers {
+			conversationId := bot.UniqueConversationId(config.ClientId, sub.UserId)
+			data := base64.StdEncoding.EncodeToString([]byte(post.Title + " " + post.TelegraphUrl))
+			bot.PostMessage(ctx, conversationId, sub.UserId, bot.UuidNewV4().String(), "PLAIN_TEXT", data, config.ClientId, config.SessionId, config.PrivateKey)
+		}
+	}
+}
 
 func (impl *postsImpl) updatePost(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	postId := params["id"]
@@ -98,6 +115,7 @@ func (impl *postsImpl) updatePost(w http.ResponseWriter, r *http.Request, params
 		views.RenderErrorResponse(w, r, err)
 	} else {
 		views.RenderPost(w, r, post)
+		sendNotifyToSubscribers(r.Context(), post)
 	}
 }
 
@@ -115,7 +133,6 @@ func (impl *postsImpl) updateDraft(w http.ResponseWriter, r *http.Request, param
 	}
 	current := middlewares.CurrentUser(r)
 	body.PostId = postId
-
 
 	if post, err := models.UpdateDraft(r.Context(), current, body); err != nil {
 		views.RenderErrorResponse(w, r, err)
@@ -141,7 +158,7 @@ func (impl *postsImpl) deleteDraft(w http.ResponseWriter, r *http.Request, param
 	}
 }
 
-func (impl *postsImpl) getUserPosts(w http.ResponseWriter, r *http.Request, params map[string]string) {
+func (impl *postsImpl) getUserTelegraphPosts(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	var offset, limit = 0, 20
 	var err error
 	if val, ok := params["offset"]; ok {
@@ -162,6 +179,30 @@ func (impl *postsImpl) getUserPosts(w http.ResponseWriter, r *http.Request, para
 		views.RenderErrorResponse(w, r, session.NotFoundError(r.Context()))
 	} else {
 		views.RenderTelegraphPosts(w, r, list)
+	}
+}
+
+func (impl *postsImpl) getUserPosts(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	var offset, limit = 0, 20
+	var err error
+	if val, ok := params["offset"]; ok {
+		offset, err = strconv.Atoi(val)
+	}
+	if val, ok := params["limit"]; ok {
+		limit, err = strconv.Atoi(val)
+	}
+	if err != nil {
+		views.RenderErrorResponse(w, r, errors.New("Params error"))
+		return
+	}
+
+	current := middlewares.CurrentUser(r)
+	if list, err := models.FindAllPostsByUser(r.Context(), current, offset, limit); err != nil {
+		views.RenderErrorResponse(w, r, err)
+	} else if list == nil {
+		views.RenderErrorResponse(w, r, session.NotFoundError(r.Context()))
+	} else {
+		views.RenderPosts(w, r, list)
 	}
 }
 
@@ -195,7 +236,6 @@ func (impl *postsImpl) getUserDraft(w http.ResponseWriter, r *http.Request, para
 		views.RenderPost(w, r, post)
 	}
 }
-
 
 func (impl *postsImpl) getUserDrafts(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	var offset, limit = 0, 20
@@ -245,6 +285,7 @@ func (impl *postsImpl) getAllPosts(w http.ResponseWriter, r *http.Request, param
 // TODO
 func (impl *postsImpl) verifyTrace(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	current := middlewares.CurrentUser(r)
+
 	if post, err := models.VerifyTrace(r.Context(), current, params["id"]); err != nil {
 		views.RenderErrorResponse(w, r, err)
 	} else if post == nil {

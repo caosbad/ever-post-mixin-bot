@@ -35,9 +35,9 @@ func Constraint(handler http.Handler) http.Handler {
 			return
 		}
 
-		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Add("Access-Control-Allow-Headers", "Content-Type,Authorization,Mixin-Conversation-ID")
-		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,GET,POST,DELETE")
+		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,GET,POST,PUT,DELETE")
 		w.Header().Set("Access-Control-Max-Age", "600")
 		if r.Method == "OPTIONS" {
 			views.RenderBlankResponse(w, r)

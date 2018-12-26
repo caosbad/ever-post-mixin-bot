@@ -1,16 +1,13 @@
 <template>
-  <q-page
-    padding
-    class="flex justify-center"
-  >
-    <div style="width: 800px; max-width: 90vw;">
+  <q-page padding>
+    <div :class="maxWidthClass">
       <!-- <div>
         {{$t()}}
       </div> -->
       <q-list
+        class=""
         no-border
         inset-separator
-        class=""
       >
         <q-list-header>{{$t('RECENT_POSTS')}}</q-list-header>
         <q-item
@@ -114,6 +111,9 @@ export default {
         limit
       } = this.pagination
       return (page - 1) * limit
+    },
+     maxWidthClass() {
+      return this.$q.platform.is.desktop ? 'col-10' : 'col-12'
     }
   }
 }

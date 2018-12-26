@@ -1,28 +1,51 @@
 <template>
   <q-layout view="hHr Lpr lFf">
-    <q-layout-header class="row justify-center">
+    <q-layout-header class="row justify-center shadow-1">
       <q-toolbar
         color=""
         inverted
-        class="col-10 "
+        :class="maxWidthClass"
       >
-        <img
-          class=""
-          src=""
-        >
-        <!-- <q-btn
+
+        <q-btn
           class="mobile-only"
           flat
           round
           dense
-          @click="showLeft = !showLeft"
+          @click="showLeft=!showLeft"
           icon="menu"
-        /> -->
-        <q-toolbar-title>Everpost</q-toolbar-title>
+        />
+        <!-- <img
+          class=""
+          src=""
+        > -->
+        <span
+          class="cursor-pointer text-lg "
+          @click="$router.push('/')"
+        >EverPost</span>
+        <q-toolbar-title>
+          <!-- <q-btn-group class="desktop-only">
+            <q-btn
+              v-if="this.userInfo"
+              class="q-mx-sm"
+              flat
+              @click="$router.push('/posts')"
+              icon=""
+            >{{$t('MY_POSTS')}}</q-btn>
+            <q-btn
+              v-if="this.userInfo"
+              class="q-mx-sm"
+              flat
+              @click="$router.push('/')"
+              icon=""
+            >{{$t('ALL_POSTS')}}</q-btn>
+          </q-btn-group> -->
+        </q-toolbar-title>
         <img
-          class="user-avatar"
+          class="user-avatar cursor-pointer"
           v-if="userInfo"
           :src="userAvatar"
+          @click="$router.push('/posts')"
           alt=""
         >
 
@@ -33,17 +56,8 @@
           round
           dense
           @click="$router.push('/draft')"
-          icon="add_circle_outline"
+          icon="note_add"
         />
-        <!-- <q-btn
-          v-if="this.userInfo"
-          class="q-mx-sm"
-          flat
-          round
-          dense
-          @click="showRight = !showRight"
-          icon="menu"
-        /> -->
         <q-btn
           v-else
           class="q-mx-sm"
@@ -79,14 +93,13 @@
     <q-page-container>
       <router-view />
     </q-page-container>
-    <q-modal v-model="paymentModal">
-      <h4>Basic Modal</h4>
-      <q-btn
-        color="primary"
-        @click="opened = false"
-        label="Close"
-      />
-    </q-modal>
+    <payment-modal
+      :show="paymentModalShow"
+      :assets="getAssets"
+      @close="close"
+      @pay="callPay"
+      @reload="reloadAssets"
+    />
   </q-layout>
 </template>
 
@@ -98,17 +111,24 @@ import {
   QLayoutDrawer,
   QToolbar,
   QToolbarTitle,
-  QBtn
+  QBtn,
+  QBtnGroup,
+  QBtnDropdown,
+  QList,
+  QItem,
+  QItemMain
 } from 'quasar'
 import {
   getCache,
-  setCache
+  setCache,
+  toastError
 } from '../utils/util'
+import PaymentModal from '../components/PaymentModal'
 // import {BOT} from '../utils/constants'
 import {
   mapActions,
   mapGetters,
-mapMutations
+  mapMutations
 } from 'vuex'
 export default {
   name: 'MyLayout',
@@ -119,23 +139,28 @@ export default {
     QLayoutDrawer,
     QToolbar,
     QToolbarTitle,
-    QBtn
+    QBtn,
+    QBtnGroup,
+    QBtnDropdown,
+    QList,
+    QItem,
+    QItemMain,
+    PaymentModal
   },
   data() {
     return {
       isLoading: false,
-      leftDrawerOpen: this.$q.platform.is.desktop,
       showRight: false,
       showLeft: false,
       locale: 'en',
-      paymentModal: false
+      paymentModalShow: false,
+      assets: []
     }
   },
   async created() {
     const code = this.$route.query.code
     if (code === undefined || code === '') {
       // await this.fetchUser()
-      debugger
       let user = getCache('account')
       if (user) this.setAccount(user)
     } else {
@@ -152,12 +177,12 @@ export default {
     this.cancelEvent()
   },
   methods: {
-    ...mapActions(['getUserInfo', 'auth', 'fetch']),
-    ...mapMutations(['setAccount']),
+    ...mapActions(['getUserInfo', 'auth', 'fetch', 'getUserAssets']),
+    ...mapMutations(['setAccount', 'setAssets']),
     async authUser(code) {
       let res = await this.auth(code)
       if (res) {
-         this.fetchUser()
+        this.fetchUser()
         this.isLoading = false
       }
     },
@@ -172,14 +197,54 @@ export default {
       setCache('lang', lang)
     },
     initEvent() {
-      this.$root.$on('pay', this.openPaymenModal)
+      this.$root.$on('payment', this.openPaymenModal)
     },
     cancelEvent() {
-      this.$root.$off('pay', this.openPaymenModal)
+      this.$root.$off('payment', this.openPaymenModal)
     },
     async openPaymenModal(callback) {
-      if (this.getAssets.length) {
-
+      try {
+      this.paymentCb = callback
+      this.paymentModalShow = true
+      if (this.getAssets.length === 0) {
+        let res = await this.getUserAssets()
+        if (res.success) {
+          this.assets = res.assets
+          this.setAssets(res.assets)
+        } else {
+          toastError(this.$t('NO_ASSETS'))
+          return null
+        }
+      }
+      } catch (e) {
+        this.paymentCb({}, false)
+      }
+    },
+    async reloadAssets() {
+      try {
+        let res = await this.getUserAssets()
+        if (res.success) {
+          this.assets = res.assets
+          this.setAssets(res.assets)
+        } else {
+          toastError(this.$t('NO_ASSETS'))
+          return null
+        }
+      } catch (e) {
+        toastError(this.$t('NO_ASSETS'))
+        return null
+      }
+    },
+    close() {
+      this.paymentModalShow = false
+      if (this.paymentCb) {
+        this.paymentCb('', false)
+      }
+    },
+    callPay(asset) {
+      this.paymentModalShow = false
+      if (this.paymentCb) {
+        this.paymentCb(asset, true)
       }
     }
   },
@@ -191,6 +256,9 @@ export default {
         let len = avatarUrl.length
         return avatarUrl.substr(0, len - 3) + '26'
       }
+    },
+    maxWidthClass() {
+      return this.$q.platform.is.desktop ? 'col-10' : 'col-12'
     }
   }
 }

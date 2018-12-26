@@ -19,6 +19,7 @@ func registerUsers(router *httptreemux.TreeMux) {
 	impl := &usersImpl{}
 	router.POST("/auth", impl.authenticate)
 	router.GET("/me", impl.me)
+	router.GET("/assets", impl.assets)
 	router.GET("/user/:id", impl.getUser)
 	router.GET("/subscriber/:id", impl.isSubscribers)
 	router.POST("/subscriber/:id", impl.subscribeUser)
@@ -44,6 +45,17 @@ func (impl *usersImpl) me(w http.ResponseWriter, r *http.Request, _ map[string]s
 	views.RenderUserWithAuthentication(w, r, middlewares.CurrentUser(r))
 }
 
+func (impl *usersImpl) assets(w http.ResponseWriter, r *http.Request, _ map[string]string) {
+	current := middlewares.CurrentUser(r)
+	if assets, err := models.Assets(r.Context(), current.AccessToken);
+		err != nil {
+		views.RenderErrorResponse(w, r, err)
+	} else {
+		views.RenderDataResponse(w, r, map[string]interface{}{"success": true, "assets": assets})
+	}
+
+}
+
 func (impl *usersImpl) subscribeUser(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	//var body struct {
 	//	UserId string `json:"id"`
@@ -58,7 +70,7 @@ func (impl *usersImpl) subscribeUser(w http.ResponseWriter, r *http.Request, par
 	if current.UserId == userId {
 		views.RenderErrorResponse(w, r, errors.New("Can not subscribe yourself"))
 	} else if subscriber, err := models.CreateSubscriber(r.Context(), userId, current.UserId); err == nil {
-		views.RenderSubscriberView(w, r, subscriber)
+		views.RenderDataResponse(w, r, map[string]interface{}{"isSub": true, "subscriber": subscriber})
 	} else {
 		views.RenderErrorResponse(w, r, err)
 	}

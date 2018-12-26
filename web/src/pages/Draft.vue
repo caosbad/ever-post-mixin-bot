@@ -1,9 +1,9 @@
 <template>
-  <q-page panding>
+  <q-page pandding>
     <div class="row justify-center q-py-lg">
-      <div class="col-lg-9 col-xs-11 col-md-10 form">
+      <div class="col-lg-9 col-xs-11 col-md-10">
         <q-field
-          class="col-8 no-shadow q-px-sm"
+          class="col-8 no-shadow q-px-sm "
           :label-width="2"
           :count="64"
         >
@@ -52,22 +52,45 @@
         </q-field>
         <div class="row justify-between">
           <q-btn
+            v-if="!isPub"
             :loading="loading"
             :disabled="$v.post.valid"
             class="col-auto m-t-1 self-center"
             color="primary"
-            @click="post"
+            outline
+            @click="submit"
           >
-            {{$t('SUBMIT')}}
+            {{$t('SAVE')}}
           </q-btn>
-          <!-- <q-btn
-            rounded
-            big
+          <q-btn
+            v-if="isPub"
+            :loading="loading"
+            :disabled="$v.post.valid"
             class="col-auto m-t-1 self-center"
-            @click="cancel"
+            color="primary"
+            outline
+            @click="submit"
+          >
+            {{$t('REPUBLISH')}}
+          </q-btn>
+          <q-btn
+            outline
+            color="info"
+            :disabled="loading"
+            class="col-auto m-t-1 self-center"
+            @click="$router.go(-1)"
           >
             {{$t('CANCEL')}}
-          </q-btn> -->
+          </q-btn>
+          <q-btn
+            v-if="!isPub"
+            color="negative"
+            outline
+            class="col-auto m-t-1 self-center"
+            @click="callDelete"
+          >
+            {{$t('DELETE')}}
+          </q-btn>
         </div>
       </div>
     </div>
@@ -93,7 +116,7 @@ import {
   minLength
 } from 'vuelidate/lib/validators'
 import { mapActions, mapGetters } from 'vuex'
-import { toastError } from '../utils/util'
+import { toastError, toast, confirm } from '../utils/util'
 import MEditor from '../components/MEditor'
 import _ from 'lodash'
 
@@ -116,8 +139,8 @@ export default {
         content: '',
         description: ''
       },
-      postId: '',
       htmlContent: '',
+      path: '',
       loading: false
     }
   },
@@ -147,33 +170,45 @@ export default {
       let {id} = this.$route.params
       if (id) this.initData(id)
     } else {
-
+      this.$router.push('/')
     }
   },
   methods: {
     ...mapActions(['getPost', 'send']),
     async initData(id) {
       let post = await this.getPost(id)
+      if (!post.post_id) this.$router.push('/')
       this.checkEditPromise(post)
       if (post) {
-        this.post = post
+        this.post = {post_id: post.post_id, title: post.title, content: post.content, description: post.description}
+        this.path = post.path
       } else {
         this.$router.push('/')
       }
     },
-    //  onChange(val, html) {
-    //   this.post.content = val
-    //   this.htmlContent = html
-    //   // this.$v.post.content.$touch()
-    // },
+     onChange(val, html) {
+      this.post.content = val
+      this.htmlContent = html
+      // this.$v.post.content.$touch()
+    },
+    submit() {
+      this.onSave(this.post.content, this.htmlContent)
+    },
+    async callDelete() {
+      let t = this.$t
+      confirm({
+        title: t('DELETE_DRAFT'),
+        confirm: t('DELETE'),
+        cancel: t('CANCEL')
+      }, () => {}, () => this.deleteDraft())
+    },
     onSave(val, html) {
-        this.post.content = val
         if (!this.checkForm() || this.loading) return
         this.loading = true
         if (this.isNewDraft) {
           this.createDraft(val)
         } else {
-         this.updatePost(val, html)
+          this.updatePost(val, html)
         }
     },
     async createDraft(val) {
@@ -182,30 +217,38 @@ export default {
         let res = await this.send({method: 'createDraft', params: {...post, content: val}})
           if (res) {
             this.post = res
+            // toast(this.$t('SAVE_SUCCESS'))
           }
-          this.reset()
       } catch (e) {
-
+        this.done()
       }
     },
     async updatePost(val, htmlContent) {
       try {
         let post = this.post
-        let res = await this.send({method: this.isTelegraph ? 'updatePost' : 'updateDraft', params: {...post, id: post.post_id, content: val, htmlContent}})
+        let res = await this.send({method: this.isPub ? 'updatePost' : 'updateDraft', params: {...post, id: post.post_id, content: val, htmlContent}})
          if (res) {
             this.post = res
+            // toast(this.$t('SAVE_SUCCESS'))
+            this.done()
          }
-         this.reset()
       } catch (e) {
         console.log(e)
+        this.done(false)
       }
     },
-    reset() {
-      _.delay(() => { this.loading = false }, 3000)
+    done(flag = true, cb = () => {}) {
+      _.delay(() => {
+        this.loading = false
+        let alert = flag ? toast : toastError
+        let msg = flag ? 'SUCCESS' : 'ERROR'
+        alert(this.$t(msg))
+        if (cb) cb()
+      }, 3000)
     },
     publish() {
+      // TODO
       if (this.checkForm()) {
-
       }
       // let article = document.createElement('div')
       // article.innerHTML = this.postHtml
@@ -213,7 +256,7 @@ export default {
     checkForm() {
       this.$v.post.$touch()
       if (this.$v.post.$invalid) {
-        toastError(this.$t('ERROR'))
+        toastError(this.$t('FORM_INVALID'))
         return false
       }
       return true
@@ -222,6 +265,25 @@ export default {
       if (this.userInfo.user_id !== post.user_id) {
         this.$router.push('/post/' + post.post_id)
       }
+    },
+    async deleteDraft() {
+      try {
+        let post = this.post
+        let res = await this.send({method: 'deleteDraft', params: {id: post.post_id}})
+         if (res) {
+            this.post = res
+         }
+         this.done(true, () => this.$router.push('/'))
+      } catch (e) {
+        this.done(false)
+      }
+    },
+    clear() {
+      this.post = {
+        title: '',
+        content: '',
+        description: ''
+      }
     }
   },
   computed: {
@@ -229,12 +291,21 @@ export default {
     isNewDraft() {
       return !this.post.post_id
     },
-    isTelegraph() {
-      return !!this.post.path
+    isPub() {
+      return !!this.path
     },
     locale() {
       let isZH = this.$i18n.locale === 'zh'
        return isZH ? 'zh-CN' : 'en'
+    },
+    draftId() {
+      return this.$route.params ? this.$route.params.id : ''
+    }
+  },
+  watch: {
+    draftId(val) {
+      this.clear()
+      if (val) this.initData(val)
     }
   }
 }

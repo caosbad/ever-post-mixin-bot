@@ -20,13 +20,12 @@ CREATE TABLE IF NOT EXISTS supports (
   amount        			VARCHAR(256),
   created_at        	TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 );
-
-CREATE INDEX ON posts (support_id);
+CREATE INDEX ON supports (support_id);
 `
 
 type Support struct {
 	SupportId   string         `sql:"support_id,pk"`
-	SupporterId string         `sql:"user_id,notnull"`
+	SupporterId string         `sql:"supporter_id,notnull"`
 	AuthorId    string         `sql:"author_id,notnull"`
 	AssetId     string         `sql:"asset_id,notnull"`
 	PostId      string         `sql:"post_id,notnull"`
