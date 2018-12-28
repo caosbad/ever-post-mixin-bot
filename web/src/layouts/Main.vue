@@ -7,22 +7,19 @@
         :class="maxWidthClass"
       >
 
-        <q-btn
+        <!-- <q-btn
           class="mobile-only"
           flat
           round
           dense
           @click="showLeft=!showLeft"
           icon="menu"
-        />
+        /> -->
         <!-- <img
           class=""
           src=""
         > -->
-        <span
-          class="cursor-pointer text-lg "
-          @click="$router.push('/')"
-        >EverPost</span>
+
         <q-toolbar-title>
           <!-- <q-btn-group class="desktop-only">
             <q-btn
@@ -40,6 +37,10 @@
               icon=""
             >{{$t('ALL_POSTS')}}</q-btn>
           </q-btn-group> -->
+          <span
+            class="cursor-pointer text-lg "
+            @click="$router.push('/')"
+          >EverPost</span>
         </q-toolbar-title>
         <img
           class="user-avatar cursor-pointer"
@@ -221,6 +222,7 @@ export default {
       }
     },
     async reloadAssets() {
+      this.assets = []
       try {
         let res = await this.getUserAssets()
         if (res.success) {

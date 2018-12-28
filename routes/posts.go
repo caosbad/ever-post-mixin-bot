@@ -5,18 +5,18 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/MixinNetwork/bot-api-go-client"
 	//"github.com/crossle/hacker-news-mixin-bot/config"
 	"github.com/caosbad/ever-post-mixin-bot/config"
-	"github.com/satori/go.uuid"
-	"net/http"
-	"strconv"
-
 	"github.com/caosbad/ever-post-mixin-bot/middlewares"
 	"github.com/caosbad/ever-post-mixin-bot/models"
 	"github.com/caosbad/ever-post-mixin-bot/session"
 	"github.com/caosbad/ever-post-mixin-bot/views"
 	"github.com/dimfeld/httptreemux"
+	"github.com/satori/go.uuid"
+	"net/http"
+	"strconv"
 )
 
 type postsImpl struct{}
@@ -69,7 +69,7 @@ func (impl *postsImpl) publishPost(w http.ResponseWriter, r *http.Request, param
 		views.RenderErrorResponse(w, r, session.BadRequestError(r.Context()))
 	} else if post != nil {
 		var body models.PostBody
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.TraceId != post.TraceId {
 			views.RenderErrorResponse(w, r, session.BadRequestError(r.Context()))
 			return
 		}
@@ -91,7 +91,10 @@ func sendNotifyToSubscribers(ctx context.Context, post *models.Post) {
 		for _, sub := range subscribers {
 			conversationId := bot.UniqueConversationId(config.ClientId, sub.UserId)
 			data := base64.StdEncoding.EncodeToString([]byte(post.Title + " " + post.TelegraphUrl))
-			bot.PostMessage(ctx, conversationId, sub.UserId, bot.UuidNewV4().String(), "PLAIN_TEXT", data, config.ClientId, config.SessionId, config.PrivateKey)
+			err := bot.PostMessage(ctx, conversationId, sub.UserId, bot.UuidNewV4().String(), "PLAIN_TEXT", data, config.ClientId, config.SessionId, config.PrivateKey)
+			if err != nil {
+				fmt.Print(err)
+			}
 		}
 	}
 }
@@ -278,7 +281,7 @@ func (impl *postsImpl) getAllPosts(w http.ResponseWriter, r *http.Request, param
 	} else if list == nil {
 		views.RenderErrorResponse(w, r, session.NotFoundError(r.Context()))
 	} else {
-		views.RenderPosts(w, r, list)
+		views.RenderAllPosts(w, r, list)
 	}
 }
 

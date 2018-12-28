@@ -21,7 +21,7 @@ const posts_DDL = `
 CREATE TABLE IF NOT EXISTS posts (
   post_id            	VARCHAR(36) PRIMARY KEY,
   user_id	        	VARCHAR(36) NOT NULL,
-  trace_id				VARCHAR(36),
+  trace_id				VARCHAR(64),
   title          		VARCHAR(256),
   path        			VARCHAR(256), 
   telegraph_url	    	VARCHAR(1024),
@@ -49,6 +49,20 @@ type Post struct {
 	CreatedAt    time.Time `sql:"created_at,notnull"`
 	UpdatedAt    time.Time `sql:"updated_at,notnull"`
 }
+type PostListItem struct {
+	PostId       string    `sql:"post_id,pk"`
+	UserId       string    `sql:"user_id,notnull"`
+	Title        string    `sql:"title,notnull"`
+	Path         string    `sql:"path"`
+	TelegraphUrl string    `sql:"telegraph_url"`
+	Description  string    `sql:"description"`
+	IpfsId       string    `sql:"ipfs_id"`
+	AvatarURL    string    `sql:"avatar_url"`
+	Content      string    `sql:"content,notnull"`
+	TraceId      string    `sql:"trace_id"`
+	CreatedAt    time.Time `sql:"created_at,notnull"`
+	UpdatedAt    time.Time `sql:"updated_at,notnull"`
+}
 
 // request body
 type PostBody struct {
@@ -61,7 +75,7 @@ type PostBody struct {
 	IpfsId      string `json:"ipfsId"`
 }
 
-var postCols = []string{"post_id", "title", "description", "content", "path", "user_id", "trace_id", "telegraph_url"}
+var postCols = []string{"post_id", "title", "description", "content", "path", "user_id", "trace_id", "telegraph_url", "ipfs_id"}
 
 func CreateDraft(ctx context.Context, user *User, title, description, content string) (*Post, error) {
 
@@ -182,14 +196,12 @@ func UpdateDraft(ctx context.Context, user *User, body PostBody) (*Post, error) 
 		post.Content = body.Content
 		post.UpdatedAt = time.Now()
 	}
-	//if body.IpfsId != "" {
-	//	post.IpfsId = body.IpfsId
-	//}
-	//if body.TraceId != "" {
-	//	post.TraceId = body.TraceId
-	//}
+	if body.IpfsId != "" {
+		post.IpfsId = body.IpfsId
+	}
+	post.UpdatedAt = time.Now()
 
-	if _, err := session.Database(ctx).Model(post).Column("title", "description", "content", "updated_at").WherePK().Update(); err != nil {
+	if _, err := session.Database(ctx).Model(post).Column("title", "description", "content", "ipfs_id", "updated_at").WherePK().Update(); err != nil {
 		return nil, session.TransactionError(ctx, err)
 	}
 	return post, nil
@@ -228,10 +240,11 @@ func VerifyTrace(ctx context.Context, user *User, traceId string) (*Post, error)
 	return &post, nil
 }
 
-func FindAllPosts(ctx context.Context, offset, limit int) ([]*Post, error) {
-	var posts []*Post
-	var orderExp = "created_at DESC"
-	err := session.Database(ctx).Model(&posts).Limit(limit).Offset(offset).Order(orderExp).Where("trace_id IS NOT NULL AND path IS NOT NULL").Select()
+func FindAllPosts(ctx context.Context, offset, limit int) ([]*PostListItem, error) {
+	var posts []*PostListItem
+	//var orderExp = "created_at DESC"
+	//err := session.Database(ctx).Model(&posts).Limit(limit).Offset(offset).Order(orderExp).Where("trace_id IS NOT NULL AND path IS NOT NULL").Select()
+	_, err := session.Database(ctx).Query(&posts, `SELECT P.*, u.avatar_url FROM posts P,users u WHERE P.user_id=u.user_id AND P.trace_id IS NOT NULL AND P.path IS NOT NULL ORDER BY created_at DESC LIMIT ? OFFSET ?`, limit, offset);
 	if err == pg.ErrNoRows {
 		return nil, nil
 	} else if err != nil {

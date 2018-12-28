@@ -11,6 +11,8 @@ const I18N_OPT = [{
 
 const mixinHost = 'https://api.mixin.one'
 const serverHost = 'http://localhost:7008'
+const IPFS_NODE = 'ipfs.infura.io'
+const IPFS_GATEWAY = 'https://ipfs.io/ipfs/'
 // const dappId = {
 //   development: '91a9aeeaa6609ebd73afc7c542eec02e7510c23a65d2e1db2840c46f74f67ceb',
 //   production: '91a9aeeaa6609ebd73afc7c542eec02e7510c23a65d2e1db2840c46f74f67ceb'
@@ -24,11 +26,13 @@ const BOT = {
 }
 
 const ASSETS = {
-  CNB: '965e5c6e-434c-3fa9-b780-c50f43cd955c'
+  CNB: '965e5c6e-434c-3fa9-b780-c50f43cd955c',
+  XIN: 'c94ac88f-4671-3976-b60a-09064f1811e8'
 }
 
 const OPT_PIRCE = {
-  PUB: 1
+  PUB: 1,
+  IPFS: 100
 }
 
 const PAY_URL = `https://mixin.one/pay?recipient=${BOT.clientId}&`
@@ -84,5 +88,7 @@ export {
   BOT,
   ASSETS,
   OPT_PIRCE,
-  PAY_URL
+  PAY_URL,
+  IPFS_NODE,
+  IPFS_GATEWAY
 }

@@ -38,7 +38,20 @@
           />
 
         </div>
+        <div
+          v-show="pageState==2"
+          class="col-11"
+        >
 
+        </div>
+        <q-btn
+          class="q-mx-sm"
+          flat
+          round
+          dense
+          icon="refresh"
+          @click="refresh"
+        />
       </q-toolbar>
 
       <q-toolbar
@@ -79,14 +92,17 @@
         </q-list>
         <div v-else>
           <div class="row justify-center q-my-lg">
-            {{$t('NO_ASSETS')}}
+            <q-inner-loading
+              :visible="!this.assets.length"
+              color="info"
+            />
           </div>
           <div class="row justify-center">
-            <q-btn
+            <!-- <q-btn
               icon="refresh"
               @click="$emit('reload')"
               :label="$t('RELOAD_ASSETS')"
-            />
+            /> -->
           </div>
 
         </div>
@@ -164,7 +180,8 @@ import {
   QItemTile,
   QJumbotron,
   QInput,
-  QField
+  QField,
+  QInnerLoading
 } from 'quasar'
 const amountStrReg = /^\d+(\.\d+)?$/
 export default {
@@ -184,7 +201,8 @@ export default {
     QItemTile,
     QJumbotron,
     QInput,
-    QField
+    QField,
+    QInnerLoading
   },
   data() {
     return {
@@ -218,6 +236,9 @@ export default {
       this.selectAsset = undefined
       this.pageState = 1
       this.amount = ''
+    },
+    refresh() {
+      this.$emit('reload')
     }
   },
   computed: {

@@ -6,7 +6,8 @@ module.exports = function (ctx) {
     plugins: [
       'i18n',
       'axios',
-      'vuelidate'
+      'vuelidate',
+      'ipfs'
       // 'quillEditor'
     ],
     css: [
@@ -44,7 +45,7 @@ module.exports = function (ctx) {
     },
     // framework: 'all' --- includes everything; for dev only!
     framework: {
-      components: ['QModal', 'QTooltip'],
+      components: ['QModal', 'QTooltip', 'QAjaxBar', 'QInfiniteScroll'],
       directives: ['CloseOverlay'],
       // Quasar plugins
       plugins: [

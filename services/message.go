@@ -48,11 +48,11 @@ func (r ResponseMessage) OnMessage(ctx context.Context, msg bot.MessageView, uid
 		if err != nil {
 			return bot.BlazeServerError(ctx, err)
 		}
-		_, err = handleTransfer(ctx, transfer, msg.UserId, r.blazeClient)
+		res, err := handleTransfer(ctx, transfer, msg.UserId, r.blazeClient)
 		if err != nil {
 			return bot.BlazeServerError(ctx, err)
 		} else {
-			return nil
+			return sendText(ctx, msg, res)
 		}
 	}
 	if msg.Category == bot.MessageCategoryPlainText {
@@ -88,13 +88,25 @@ func handleTransfer(ctx context.Context, transfer bot.TransferView, userId strin
 	if _, err := uuid.FromString(transfer.Memo); err == nil {
 		if post, err := models.FindPostByPostId(ctx, transfer.Memo); err != nil {
 			return "", bot.BlazeServerError(ctx, err)
-		} else if post.UserId == transfer.CounterUserId && post.Path == "" { // post article payment
-			post.TraceId = transfer.TraceId
-			_, err = models.UpdatePostTraceId(ctx, post)
-			if err != nil {
-				return "", bot.BlazeServerError(ctx, err)
+		} else if post.UserId == transfer.CounterUserId { // publish or ipfs article payment
+			if post.Path == "" && transfer.Amount == config.CNBAmount && transfer.AssetId == config.CNBAssetId { // publish
+				post.TraceId = transfer.TraceId
+				_, err = models.UpdatePostTraceId(ctx, post)
+				if err != nil {
+					return "", bot.BlazeServerError(ctx, err)
+				}
+				return "payment successfully...", nil
+			} else if post.Path != "" && post.TraceId != "" && transfer.Amount == config.CNBAmount && transfer.AssetId == config.CNBAssetId {
+				post.TraceId = transfer.TraceId
+				_, err = models.UpdatePostTraceId(ctx, post)
+				if err != nil {
+					return "", bot.BlazeServerError(ctx, err)
+				}
+				return "payment successfully...", nil
+			} else {
+				return "Donation successfully", nil
 			}
-			return "payment successfully...", nil
+
 		} else { // vote article payment
 			if err := sendTransfer(ctx, &bot.TransferInput{
 				AssetId:     transfer.AssetId,
@@ -122,7 +134,7 @@ func handleTransfer(ctx context.Context, transfer bot.TransferView, userId strin
 		//	return nil, bot.BlazeServerError(ctx, err)
 		//}
 		//return "Thanks for your donation...", nil
-		return "", nil
+		return "Thx for your donation...", nil
 	}
 
 }
@@ -136,11 +148,15 @@ func sendTransfer(ctx context.Context, transfer *bot.TransferInput) error {
 	return nil
 }
 
-func sendText(ctx context.Context, client *bot.BlazeClient, msg bot.MessageView, content string) error {
-	if err := client.SendPlainText(ctx, msg, content); err != nil {
-		return bot.BlazeServerError(ctx, err)
+func sendText(ctx context.Context, msg bot.MessageView, content string) error {
+	//conversationId := bot.UniqueConversationId(config.ClientId, sub.UserId)
+	data := base64.StdEncoding.EncodeToString([]byte(content))
+	err := bot.PostMessage(ctx, msg.ConversationId, msg.UserId, bot.UuidNewV4().String(), "PLAIN_TEXT", data, config.ClientId, config.SessionId, config.PrivateKey)
+	if err != nil {
+		return err
+	} else {
+		return nil
 	}
-	return nil
 }
 
 func sendPaidMessage(ctx context.Context, client *bot.BlazeClient, msg bot.MessageView, content string) error {

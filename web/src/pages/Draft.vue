@@ -1,7 +1,10 @@
 <template>
   <q-page pandding>
     <div class="row justify-center q-py-lg">
-      <div class="col-lg-9 col-xs-11 col-md-10">
+      <div
+        v-if="draftable"
+        class="col-lg-9 col-xs-11 col-md-10"
+      >
         <q-field
           class="col-8 no-shadow q-px-sm "
           :label-width="2"
@@ -47,6 +50,7 @@
             v-model="post.content"
             class=" "
             @save="onSave"
+            @change="onChange"
             :placeholder="$t('NEW_POST_PLACEHOLDER')"
           />
         </q-field>
@@ -69,7 +73,7 @@
             class="col-auto m-t-1 self-center"
             color="primary"
             outline
-            @click="submit"
+            @click="rePublish"
           >
             {{$t('REPUBLISH')}}
           </q-btn>
@@ -93,6 +97,10 @@
           </q-btn>
         </div>
       </div>
+      <!-- <vue-markdown
+        class="q-my-lg "
+        @rendered="(html)=>htmlContent=html"
+      >{{post.content}}</vue-markdown> -->
     </div>
   </q-page>
 </template>
@@ -115,8 +123,17 @@ import {
   maxLength,
   minLength
 } from 'vuelidate/lib/validators'
-import { mapActions, mapGetters } from 'vuex'
-import { toastError, toast, confirm } from '../utils/util'
+import {
+  mapActions,
+  mapGetters
+} from 'vuex'
+import {
+  toastError,
+  toast,
+  toastWarn,
+  confirm
+} from '../utils/util'
+import VueMarkdown from 'vue-markdown'
 import MEditor from '../components/MEditor'
 import _ from 'lodash'
 
@@ -130,7 +147,8 @@ export default {
     QSlider,
     QPage,
     MEditor,
-    QBtn
+    QBtn,
+    VueMarkdown
   },
   data() {
     return {
@@ -141,7 +159,8 @@ export default {
       },
       htmlContent: '',
       path: '',
-      loading: false
+      loading: false,
+      draftable: true
     }
   },
   validations: {
@@ -167,7 +186,9 @@ export default {
   },
   mounted() {
     if (this.userInfo) {
-      let {id} = this.$route.params
+      let {
+        id
+      } = this.$route.params
       if (id) this.initData(id)
     } else {
       this.$router.push('/')
@@ -178,21 +199,31 @@ export default {
     async initData(id) {
       let post = await this.getPost(id)
       if (!post.post_id) this.$router.push('/')
+      if (post.ipfs_id) {
+        toastWarn(this.$t('CANNOT_SAVE_IPFS_POST'))
+        this.draftable = false
+        _.delay(() => this.$router.go(-1), 2500)
+      }
       this.checkEditPromise(post)
       if (post) {
-        this.post = {post_id: post.post_id, title: post.title, content: post.content, description: post.description}
+        this.post = {
+          post_id: post.post_id,
+          title: post.title,
+          content: post.content,
+          description: post.description
+        }
         this.path = post.path
       } else {
         this.$router.push('/')
       }
     },
-     onChange(val, html) {
+    onChange(val, html) {
       this.post.content = val
       this.htmlContent = html
       // this.$v.post.content.$touch()
     },
     submit() {
-      this.onSave(this.post.content, this.htmlContent)
+      this.updatePost(this.post.content, this.htmlContent)
     },
     async callDelete() {
       let t = this.$t
@@ -203,35 +234,71 @@ export default {
       }, () => {}, () => this.deleteDraft())
     },
     onSave(val, html) {
-        if (!this.checkForm() || this.loading) return
-        this.loading = true
-        if (this.isNewDraft) {
-          this.createDraft(val)
-        } else {
-          this.updatePost(val, html)
-        }
+      if (!this.checkForm() || this.loading) return
+      this.loading = true
+      if (this.isNewDraft) {
+        this.createDraft(val)
+      } else {
+        this.updateDraft(val, html)
+      }
     },
     async createDraft(val) {
       try {
         let post = this.post
-        let res = await this.send({method: 'createDraft', params: {...post, content: val}})
-          if (res) {
-            this.post = res
-            // toast(this.$t('SAVE_SUCCESS'))
+        let res = await this.send({
+          method: 'createDraft',
+          params: { ...post,
+            content: val
           }
+        })
+        if (res) {
+          // this.post = res
+          // toast(this.$t('SAVE_SUCCESS'))
+        }
       } catch (e) {
         this.done()
+      }
+    },
+    rePublish() {
+      this.updatePost(this.post.content, this.htmlContent)
+    },
+    async updateDraft(val, htmlContent) {
+      try {
+        let post = this.post
+        let res = await this.send({
+          method: 'updateDraft',
+          params: { ...post,
+            id: post.post_id,
+            content: val,
+            htmlContent
+          }
+        })
+        if (res) {
+          // this.post = res
+          // toast(this.$t('SAVE_SUCCESS'))
+          this.done()
+        }
+      } catch (e) {
+        console.log(e)
+        this.done(false)
       }
     },
     async updatePost(val, htmlContent) {
       try {
         let post = this.post
-        let res = await this.send({method: this.isPub ? 'updatePost' : 'updateDraft', params: {...post, id: post.post_id, content: val, htmlContent}})
-         if (res) {
-            this.post = res
-            // toast(this.$t('SAVE_SUCCESS'))
-            this.done()
-         }
+        let res = await this.send({
+          method: 'updatePost',
+          params: { ...post,
+            id: post.post_id,
+            content: val,
+            htmlContent
+          }
+        })
+        if (res) {
+          // this.post = res
+          // toast(this.$t('SAVE_SUCCESS'))
+          this.done()
+        }
       } catch (e) {
         console.log(e)
         this.done(false)
@@ -248,8 +315,7 @@ export default {
     },
     publish() {
       // TODO
-      if (this.checkForm()) {
-      }
+      if (this.checkForm()) {}
       // let article = document.createElement('div')
       // article.innerHTML = this.postHtml
     },
@@ -269,11 +335,16 @@ export default {
     async deleteDraft() {
       try {
         let post = this.post
-        let res = await this.send({method: 'deleteDraft', params: {id: post.post_id}})
-         if (res) {
-            this.post = res
-         }
-         this.done(true, () => this.$router.push('/'))
+        let res = await this.send({
+          method: 'deleteDraft',
+          params: {
+            id: post.post_id
+          }
+        })
+        if (res) {
+          this.post = res
+        }
+        this.done(true, () => this.$router.push('/'))
       } catch (e) {
         this.done(false)
       }
@@ -296,7 +367,7 @@ export default {
     },
     locale() {
       let isZH = this.$i18n.locale === 'zh'
-       return isZH ? 'zh-CN' : 'en'
+      return isZH ? 'zh-CN' : 'en'
     },
     draftId() {
       return this.$route.params ? this.$route.params.id : ''

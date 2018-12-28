@@ -1,45 +1,22 @@
 <template>
   <q-page padding>
     <div :class="maxWidthClass">
-      <!-- <div>
-        {{$t()}}
-      </div> -->
-      <q-list
-        class=""
-        no-border
-        inset-separator
+      <list-container
+        :datas="posts"
+        @loadMore="loadMore"
+        :expand="true"
       >
-        <q-list-header>{{$t('RECENT_POSTS')}}</q-list-header>
-        <q-item
-          v-if="posts.length"
-          v-for="(post,idx) in posts"
-          :key="idx"
-          :to="'/post/'+ post.post_id"
+        <template
+          slot="item"
+          slot-scope="props"
         >
-          <q-item-side>
-            <q-item-tile avatar>
-              <!-- <img :src="" /> -->
-            </q-item-tile>
-          </q-item-side>
-          <q-item-main>
-            <q-item-tile label>{{post.title}}</q-item-tile>
-            <q-item-tile sublabel>{{post.description}}</q-item-tile>
-          </q-item-main>
-          <q-item-side right>
-            <q-item-tile
-              icon="chat_bubble"
-              color="green"
-            />
-          </q-item-side>
-        </q-item>
-        <q-item v-else>
-          {{$t('NO_DATA')}}
-          <q-btn
-            label="New"
-            @click="$router.push('/draft')"
+          <separator />
+          <post-item
+            :data="props.data"
+            :index="props.index"
           />
-        </q-item>
-      </q-list>
+        </template>
+      </list-container>
     </div>
   </q-page>
 </template>
@@ -57,11 +34,15 @@ import {
   QItemSeparator,
   QItemSide,
   QItemTile,
-  QBtn
+  QBtn,
+  QSpinnerDots
 } from 'quasar'
 import {
   mapActions
 } from 'vuex'
+import ListContainer from '../components/ListContainer'
+import PostItem from '../components/PostItem'
+import Separator from '../components/Separator'
 
 export default {
   name: 'Index',
@@ -74,7 +55,11 @@ export default {
     QItemSeparator,
     QItemSide,
     QItemTile,
-    QBtn
+    QBtn,
+    QSpinnerDots,
+    ListContainer,
+    PostItem,
+    Separator
   },
   data() {
     return {
@@ -102,6 +87,9 @@ export default {
     },
     open(postId) {
       this.$router.push('/')
+    },
+    loadMore() {
+
     }
   },
   computed: {

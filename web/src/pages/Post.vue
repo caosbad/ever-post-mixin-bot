@@ -12,13 +12,14 @@
           <div class="post-header col-12">{{post.title}}</div>
           <div
             v-if="userInfo"
-            class="col-2 flex items-center justify-end btns"
+            :class="btnBarClass"
           >
             <div v-if="isSelf">
               <q-btn
+                v-if="!isIPFS"
                 :label="$t('EDIT')"
                 color="primary"
-                class="q-mx-sm"
+                class="q-mx-xs"
                 rounded
                 outline
                 :disabled="payLoading"
@@ -30,44 +31,59 @@
                 :loading="payLoading"
                 :label="$t('PUBLISH')"
                 color="info"
+                class="q-mx-xs"
                 @click="doPublish"
+                outline
+                rounded
+                size="sm"
+              />
+
+              <q-btn
+                v-if="isPub"
+                class="q-mx-xs"
+                color="info"
+                :label="$t('VIEW_ON_TELEGRAPH')"
+                outline
+                rounded
+                :disabled="payLoading"
+                @click="viewTelegraph"
+                size="sm"
+              />
+              <q-btn
+                v-if="isPub && !isIPFS"
+                :loading="payLoading"
+                :label="$t('IPFS_IT')"
+                class="q-mx-xs"
+                color="green"
+                @click="doIPFS"
                 outline
                 rounded
                 size="sm"
               />
             </div>
             <q-btn
-              v-if="isPub"
-              class="desktop-only"
-              :label="$t('VIEW_ON_TELEGRAPH')"
+              v-if="isIPFS"
+              :label="$t('VIEW_ON_IPFS')"
+              class="q-mx-xs"
               outline
               rounded
               :disabled="payLoading"
-              @click="viewTelegraph"
-              size="sm"
-            />
-            <q-btn
-              v-if="isEver"
-              :label="$t('VIEW')"
-              outline
-              rounded
-              :disabled="payLoading"
+              @click="openIPFSUrl"
               size="sm"
             />
 
           </div>
-
         </div>
         <div
           v-if="user"
-          class="row author-container"
+          class="row author-container "
         >
           <img
             class="author-img"
             :src="authorImg"
             alt=""
           >
-          <p class="author-info">
+          <p class="author-info ">
             {{user.full_name}}
             <q-btn
               v-if="!isSelf"
@@ -86,7 +102,10 @@
                 {{$t(isSub? 'UNFOLLOW' : 'FOLLOW')}}
               </q-tooltip>
             </q-btn>
-            <br /> {{post.created_at}}
+            <br />
+            <span class="q-mt-xs">
+              {{post.created_at}}
+            </span>
           </p>
         </div>
       </div>
@@ -130,7 +149,8 @@ import VueMarkdown from 'vue-markdown'
 import {
   ASSETS,
   OPT_PIRCE,
-  PAY_URL
+  PAY_URL,
+  IPFS_GATEWAY
 } from '../utils/constants'
 // import { toastError } from '../utils/util'
 import MEditor from '../components/MEditor'
@@ -138,6 +158,10 @@ import uuidv4 from 'uuid/v4'
 import {
   toastError
 } from '../utils/util'
+
+import {
+  renderPostPage
+} from '../utils/ipfsTemp'
 
 export default {
   name: 'Post',
@@ -231,7 +255,11 @@ export default {
       // this.$root.$emit('payment', () => this.publish)
       this.payLoading = true
       let traceId = uuidv4()
-      let url = `${PAY_URL}asset=${ASSETS.CNB}&amount=${OPT_PIRCE.PUB}&trace=${traceId}&memo=${this.post.post_id}`
+      let url = this.getPayUrl({
+        asset_id: ASSETS.CNB,
+        amount: OPT_PIRCE.PUB
+      }, traceId, this.post.post_id)
+      // let url = `${PAY_URL}asset=${ASSETS.CNB}&amount=${OPT_PIRCE.PUB}&trace=${traceId}&memo=${this.post.post_id}`
       let tab = window.open('')
       tab.location = url
       setTimeout(() => {
@@ -245,7 +273,8 @@ export default {
           method: 'publishPost',
           params: { ...post,
             id: post.post_id,
-            htmlContent: this.htmlContent
+            htmlContent: this.htmlContent,
+            traceId
           }
         })
         if (res.path) {
@@ -274,7 +303,7 @@ export default {
           if (tab !== undefined) {
             tab.close()
           }
-          if (cb)cb(response.trace_id)
+          if (cb) cb(response.trace_id)
         }
       } catch (e) {
         console.log(e)
@@ -323,11 +352,61 @@ export default {
     //     toastError(this.$t('ERROR'))
     //   }
     // },
-    getPayUrl(asset, traceId) {
+    getPayUrl(asset, traceId, memo = '') {
       let assetId = asset.asset_id
       let amount = asset.amount
       let url = `${PAY_URL}asset=${assetId}&amount=${amount}&trace=${traceId}&memo=${this.post.post_id}`
+      if (memo.length) url = `${url}&memo=${memo}`
       return url
+    },
+    doIPFS() {
+      this.payLoading = true
+      let traceId = uuidv4()
+      let url = this.getPayUrl({
+        asset_id: ASSETS.CNB,
+        amount: OPT_PIRCE.IPFS
+      }, traceId)
+      let tab = window.open('')
+      tab.location = url
+      setTimeout(() => {
+        this.waitForPubPayment(traceId, tab, () => this.ipfs(traceId))
+      }, 5000)
+    },
+    async ipfs(traceId) {
+      try {
+        let post = this.post
+        let postHtml = renderPostPage(post.title, post.description, this.userInfo.full_name, this.htmlContent)
+        this.$save2IPFS(postHtml, async (err, datahash) => {
+          if (err) {
+            toastError(this.$t('IPFS_ERROR'))
+            console.log(err)
+            this.payLoading = false
+            return null
+          } else if (!err && datahash) {
+            openURL(`${IPFS_GATEWAY}${datahash}/`)
+            let res = await this.send({
+              method: 'updateDraft',
+              params: {
+                id: post.post_id,
+                ipfsId: datahash,
+                traceId
+              }
+            })
+            if (res.ipfs_id) {
+              this.payLoading = false
+              this.initData(res.post_id)
+            }
+          }
+        })
+      } catch (e) {
+        this.payLoading = false
+        console.log(e)
+      }
+      // this.$save2IPFS
+    },
+    openIPFSUrl() {
+      let url = this.post && this.post.ipfs_id ? `${IPFS_GATEWAY}${this.post.ipfs_id}/` : null
+      openURL(url)
     }
   },
   computed: {
@@ -345,7 +424,7 @@ export default {
     isPub() {
       return this.post ? this.post.path : false
     },
-    isEver() {
+    isIPFS() {
       return this.post ? this.post.ipfs_id : false
     },
     authorImg() {
@@ -362,6 +441,11 @@ export default {
     },
     maxWidthClass() {
       return this.$q.platform.is.desktop ? 'col-10 justify-center' : 'col-11 justify-center'
+    },
+    btnBarClass() {
+      let classStr = 'col-12 flex items-center btns '
+      let barClass = this.$q.platform.is.desktop ? 'justify-end' : 'justify-start'
+      return classStr + barClass
     }
   }
 }
@@ -372,7 +456,7 @@ export default {
   display: block;
   font-size: 2.5em;
   margin-block-start: 0.67em;
-  margin-block-end: 0.67em;
+  // margin-block-end: 0.67em;
   margin-inline-start: 0px;
   margin-inline-end: 0px;
   font-weight: bold;
