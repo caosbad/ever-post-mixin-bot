@@ -7,7 +7,8 @@ module.exports = function (ctx) {
       'i18n',
       'axios',
       'vuelidate',
-      'ipfs'
+      'ipfs',
+      'filters'
       // 'quillEditor'
     ],
     css: [

@@ -1,28 +1,59 @@
 <template>
   <q-card class="no-shadow bg-white">
-    <q-item @click.native="open(data.post_id)">
+    <q-item
+      class="q-mt-lg"
+      multiline
+      @click.native="open(data.post_id)"
+    >
       <q-item-side :avatar="data.avatar_url" />
-      <q-item-main>
-        <q-item-tile label>{{data.title}}</q-item-tile>
-        <q-item-tile sublabel>{{data.created_at}}</q-item-tile>
-      </q-item-main>
+      <q-item-main
+        :label="data.title"
+        label-lines="1"
+        :sublabel="data.description"
+        sublabel-lines="2"
+      />
+      <q-item-side
+        class="desktop-only"
+        right
+      >
+        <q-item-tile stamp>{{data.created_at | time}}</q-item-tile>
+        <q-item-tile>
+          <img
+            v-if="data.path"
+            class="icon-svg q-mx-xs"
+            @click="openURL(data.telegraph_url)"
+            :src="telegraphIcon"
+          >
+          <img
+            v-if="data.ipfs_id"
+            class="icon-svg q-mx-xs"
+            :src="ipfsIcon"
+            @click="openIPFSUrl(data)"
+          >
+        </q-item-tile>
+      </q-item-side>
     </q-item>
-    <q-card-main class="font-12 text-faded">
-      {{data.description}}
-      <div class="row justify-end">
-        <img
-          v-if="data.path"
-          class="icon-svg q-mx-xs"
-          @click="openURL(data.telegraph_url)"
-          :src="telegraphIcon"
-        >
-        <img
-          v-if="data.ipfs_id"
-          class="icon-svg q-mx-xs"
-          :src="ipfsIcon"
-          @click="openIPFSUrl"
-        >
+    <q-card-main class="font-12 mobile-only">
+      <div class="row justify-between">
+        <div>
+          <img
+            v-if="data.path"
+            class="icon-svg q-mx-xs"
+            @click="openURL(data.telegraph_url)"
+            :src="telegraphIcon"
+          >
+          <img
+            v-if="data.ipfs_id"
+            class="icon-svg q-mx-xs"
+            :src="ipfsIcon"
+            @click="openIPFSUrl(data)"
+          >
+        </div>
+        <div>
+          {{data.created_at | time}}
+        </div>
       </div>
+
     </q-card-main>
   </q-card>
 </template>
@@ -61,8 +92,8 @@ export default {
     open(id) {
       this.$router.push(`/post/${id}`)
     },
-    openIPFSUrl() {
-      let url = this.post && this.post.ipfs_id ? `${IPFS_GATEWAY}${this.post.ipfs_id}/` : null
+    openIPFSUrl(post) {
+      let url = post && post.ipfs_id ? `${IPFS_GATEWAY}${post.ipfs_id}/` : null
       openURL(url)
     }
   },

@@ -57,7 +57,7 @@
           round
           dense
           @click="$router.push('/draft')"
-          icon="note_add"
+          icon="add"
         />
         <q-btn
           v-else

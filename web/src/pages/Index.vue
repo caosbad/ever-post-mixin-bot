@@ -1,20 +1,24 @@
 <template>
-  <q-page padding>
+  <q-page
+    padding
+    class="row justify-center"
+  >
     <div :class="maxWidthClass">
       <list-container
         :datas="posts"
         @loadMore="loadMore"
         :expand="true"
+        :count="count"
       >
         <template
           slot="item"
           slot-scope="props"
         >
-          <separator />
           <post-item
             :data="props.data"
             :index="props.index"
           />
+          <separator />
         </template>
       </list-container>
     </div>
@@ -43,6 +47,10 @@ import {
 import ListContainer from '../components/ListContainer'
 import PostItem from '../components/PostItem'
 import Separator from '../components/Separator'
+import {
+  toastError
+} from '../utils/util'
+import _ from 'lodash'
 
 export default {
   name: 'Index',
@@ -65,8 +73,9 @@ export default {
     return {
       pagination: {
         page: 1,
-        limit: 10
+        limit: 2
       },
+      count: 0,
       posts: []
     }
   },
@@ -75,21 +84,34 @@ export default {
   },
   methods: {
     ...mapActions(['getAllPost', 'getDrafts', 'getMyPosts']),
-    async getPosts() {
-      let res = await this.getAllPost({
+    async getPosts(append = false) {
+      try {
+        let res = await this.getAllPost({
         offset: this.offset,
         limit: this.pagination.limit
       })
       if (res) {
         console.log(res)
-        this.posts = res
+        if (append) {
+          this.posts = this.posts.concat(res.posts)
+        } else {
+          this.posts = res.posts
+        }
+        this.count = res.total_count
+      } else {
+        toastError(this.$t('LOAD_ERROR'))
+      }
+      } catch (error) {
+        toastError(this.$t('LOAD_ERROR'))
       }
     },
     open(postId) {
       this.$router.push('/')
     },
-    loadMore() {
-
+    async loadMore(index, done) {
+      this.pagination.page++
+      await this.getPosts(true)
+      _.delay(() => done(), 1000)
     }
   },
   computed: {
@@ -100,7 +122,7 @@ export default {
       } = this.pagination
       return (page - 1) * limit
     },
-     maxWidthClass() {
+    maxWidthClass() {
       return this.$q.platform.is.desktop ? 'col-10' : 'col-12'
     }
   }
