@@ -21,6 +21,7 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
+		StartFileServer("../everpost-fe")
 	case "blaze":
 		hub := services.NewHub(db)
 		err := hub.StartService(*service)
