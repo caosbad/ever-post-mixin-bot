@@ -20,6 +20,7 @@ systemd
 
 node_modules
 web/dist
+.quasar
 
 # local env files
 .env.local
@@ -42,3 +43,6 @@ yarn-error.log*
 nginx.conf
 
 config/*
+
+
+
