@@ -10,7 +10,7 @@
     "lint": "eslint --ext .js,.vue src",
     "build:tw": "./node_modules/.bin/tailwind build ./src/css/tailwind.css -o ./src/css/tailwindOutput.css",
     "test": "echo \"No test specified\" && exit 0",
-    "deploy": "quasar build && rsync -a dist/spa-mat/ ../../everpost-fe/ && git add . && git commit -m 'update fe' && git push"
+    "deploy": "quasar build && rsync -a dist/spa-mat/ ../../everpost-fe/ && cd ../../everpost-fe/  && git add . && git commit -m 'update fe' && git push"
   },
   "dependencies": {
     "axios": "^0.18.0",

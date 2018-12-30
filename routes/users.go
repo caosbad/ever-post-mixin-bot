@@ -17,13 +17,13 @@ type usersImpl struct{}
 
 func registerUsers(router *httptreemux.TreeMux) {
 	impl := &usersImpl{}
-	router.POST("/auth", impl.authenticate)
-	router.GET("/me", impl.me)
-	router.GET("/assets", impl.assets)
-	router.GET("/user/:id", impl.getUser)
-	router.GET("/subscriber/:id", impl.isSubscribers)
-	router.POST("/subscriber/:id", impl.subscribeUser)
-	router.DELETE("/subscriber/:id", impl.cancelSubscribe)
+	router.POST("/api/auth", impl.authenticate)
+	router.GET("/api/me", impl.me)
+	router.GET("/api/assets", impl.assets)
+	router.GET("/api/user/:id", impl.getUser)
+	router.GET("/api/subscriber/:id", impl.isSubscribers)
+	router.POST("/api/subscriber/:id", impl.subscribeUser)
+	router.DELETE("/api/subscriber/:id", impl.cancelSubscribe)
 	// router.GET("/tele", impl.registerTele)
 }
 

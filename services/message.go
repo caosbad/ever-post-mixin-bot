@@ -55,14 +55,14 @@ func (r ResponseMessage) OnMessage(ctx context.Context, msg bot.MessageView, uid
 			return sendText(ctx, msg, res)
 		}
 	}
-	if msg.Category == bot.MessageCategoryPlainText {
-
-		if _, err := base64.StdEncoding.DecodeString(msg.Data); err != nil {
-			return bot.BlazeServerError(ctx, err)
-		} else if err = handleText(ctx, r.blazeClient, msg); err != nil {
-			return bot.BlazeServerError(ctx, err)
-		}
-	}
+	//if msg.Category == bot.MessageCategoryPlainText {
+	//
+	//	if _, err := base64.StdEncoding.DecodeString(msg.Data); err != nil {
+	//		return bot.BlazeServerError(ctx, err)
+	//	} else if err = handleText(ctx, r.blazeClient, msg); err != nil {
+	//		return bot.BlazeServerError(ctx, err)
+	//	}
+	//}
 	return nil
 }
 

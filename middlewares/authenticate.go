@@ -13,11 +13,11 @@ import (
 )
 
 var whitelist = [][2]string{
-	{"GET", "^/$"},
-	{"POST", "^/auth$"},
-	{"GET", "^/posts"},
-	{"GET", "^/posts/.*"},
-	{"GET", "^/user/.*"},
+	{"GET", "^/api/$"},
+	{"POST", "^/api/auth$"},
+	{"GET", "^/api/posts"},
+	{"GET", "^/api/posts/.*"},
+	{"GET", "^/api/user/.*"},
 }
 
 type contextValueKey struct{ int }

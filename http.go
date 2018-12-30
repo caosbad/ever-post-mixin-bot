@@ -29,7 +29,3 @@ func StartServer(db *pg.DB) error {
 	handler = middlewares.Context(handler, db, render.New(render.Options{UnEscapeHTML: true}))
 	return gracehttp.Serve(&http.Server{Addr: fmt.Sprintf(":%d", config.HTTPListenPort), Handler: handler})
 }
-
-func StartFileServer(path string) {
-	http.ListenAndServe(":80", http.FileServer(http.Dir(path)))
-}
