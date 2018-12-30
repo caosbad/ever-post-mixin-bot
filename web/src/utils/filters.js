@@ -7,7 +7,7 @@ const filters = {
     return t(value)
   },
   time: (value) => {
-    return moment(value).format('YYYY-MM-DD, hh:mm:ss')
+    return moment(value).format('YYYY-MM-DD  hh:mm:ss')
   }
 }
 export default filters

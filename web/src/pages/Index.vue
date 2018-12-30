@@ -11,6 +11,12 @@
         :count="count"
       >
         <template
+          slot="header"
+          slot-scope="props"
+        >
+          <q-list-header>{{$t('RECENT_POSTS')}}</q-list-header>
+        </template>
+        <template
           slot="item"
           slot-scope="props"
         >
@@ -73,7 +79,7 @@ export default {
     return {
       pagination: {
         page: 1,
-        limit: 2
+        limit: 20
       },
       count: 0,
       posts: []
@@ -83,7 +89,7 @@ export default {
     this.getPosts()
   },
   methods: {
-    ...mapActions(['getAllPost', 'getDrafts', 'getMyPosts']),
+    ...mapActions(['getAllPost']),
     async getPosts(append = false) {
       try {
         let res = await this.getAllPost({

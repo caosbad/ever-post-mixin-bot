@@ -240,29 +240,41 @@ func VerifyTrace(ctx context.Context, user *User, traceId string) (*Post, error)
 	return &post, nil
 }
 
-func FindAllPosts(ctx context.Context, offset, limit int) ([]*PostListItem, error) {
+func FindAllPosts(ctx context.Context, offset, limit int) ([]*PostListItem, int, error) {
+	var post []*Post
 	var posts []*PostListItem
-	//var orderExp = "created_at DESC"
-	//err := session.Database(ctx).Model(&posts).Limit(limit).Offset(offset).Order(orderExp).Where("trace_id IS NOT NULL AND path IS NOT NULL").Select()
-	_, err := session.Database(ctx).Query(&posts, `SELECT P.*, u.avatar_url FROM posts P,users u WHERE P.user_id=u.user_id AND P.trace_id IS NOT NULL AND P.path IS NOT NULL ORDER BY created_at DESC LIMIT ? OFFSET ?`, limit, offset);
-	if err == pg.ErrNoRows {
-		return nil, nil
+	var orderExp = "created_at DESC"
+	if count, err := session.Database(ctx).Model(&post).Order(orderExp).Where("trace_id IS NOT NULL AND path IS NOT NULL").Count(); err != nil {
+		return nil, 0, session.TransactionError(ctx, err)
+	} else if _, err := session.Database(ctx).Query(&posts, `SELECT P.*, u.avatar_url FROM posts P,users u WHERE P.user_id=u.user_id AND P.trace_id IS NOT NULL AND P.path IS NOT NULL ORDER BY created_at DESC LIMIT ? OFFSET ?`, limit, offset); err == pg.ErrNoRows {
+		return nil, 0, nil
 	} else if err != nil {
-		return nil, session.TransactionError(ctx, err)
+		return nil, 0, session.TransactionError(ctx, err)
+	} else {
+		return posts, count, nil
 	}
-	return posts, nil
+
 }
 
-func FindAllPostsByUser(ctx context.Context, user *User, offset, limit int) ([]*Post, error) {
+func FindPostsByUser(ctx context.Context, user *User, offset, limit int, postType string) ([]*Post, int, error) {
 	var posts []*Post
 	var orderExp = "created_at DESC"
-	err := session.Database(ctx).Model(&posts).Limit(limit).Offset(offset).Order(orderExp).Where("trace_id IS NOT NULL AND path IS NOT NULL AND user_id = ?", user.UserId).Select()
-	if err == pg.ErrNoRows {
-		return nil, nil
-	} else if err != nil {
-		return nil, session.TransactionError(ctx, err)
+	var whereSql string
+	switch postType {
+	case "draft":
+		whereSql = "trace_id IS NULL AND user_id = ?"
+	case "ipfs":
+		whereSql = "trace_id IS NOT NULL AND path IS NOT NULL AND ipfs_id IS NOT NULL AND user_id = ?"
+	case "telegraph":
+		whereSql = "trace_id IS NOT NULL AND path IS NOT NULL AND user_id = ?"
 	}
-	return posts, nil
+	count, err := session.Database(ctx).Model(&posts).Limit(limit).Offset(offset).Order(orderExp).Where(whereSql, user.UserId).SelectAndCount()
+	if err == pg.ErrNoRows {
+		return nil, 0, nil
+	} else if err != nil {
+		return nil, 0, session.TransactionError(ctx, err)
+	}
+	return posts, count, nil
 }
 
 func FindTelegraphPostsByUser(ctx context.Context, user *User, offset, limit int) (*telegraph.PageList, error) {
@@ -278,16 +290,16 @@ func FindTelegraphPostsByUser(ctx context.Context, user *User, offset, limit int
 	return list, nil
 }
 
-func FindDraftsByUser(ctx context.Context, user *User, offset, limit int) ([]*Post, error) {
+func FindDraftsByUser(ctx context.Context, user *User, offset, limit int) ([]*Post, int, error) {
 	var drafts []*Post
 	var orderExp = "created_at DESC"
-	err := session.Database(ctx).Model(&drafts).Limit(limit).Offset(offset).Order(orderExp).Where("trace_id IS NULL AND path IS NULL AND user_id = ?", user.UserId).Select()
+	count, err := session.Database(ctx).Model(&drafts).Limit(limit).Offset(offset).Order(orderExp).Where("trace_id IS NULL AND path IS NULL AND user_id = ?", user.UserId).SelectAndCount()
 	if err == pg.ErrNoRows {
-		return nil, nil
+		return nil, 0, nil
 	} else if err != nil {
-		return nil, session.TransactionError(ctx, err)
+		return nil, 0, session.TransactionError(ctx, err)
 	}
-	return drafts, nil
+	return drafts, count, nil
 }
 
 func FindPostByPath(ctx context.Context, path string) (*Post, error) {

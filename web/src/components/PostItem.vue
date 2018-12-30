@@ -1,11 +1,14 @@
 <template>
   <q-card class="no-shadow bg-white">
     <q-item
-      class="q-mt-lg"
+      class="q-mt-sm"
       multiline
       @click.native="open(data.post_id)"
     >
-      <q-item-side :avatar="data.avatar_url" />
+      <q-item-side
+        v-if="data.avatar_url"
+        :avatar="data.avatar_url"
+      />
       <q-item-main
         :label="data.title"
         label-lines="1"
@@ -16,7 +19,7 @@
         class="desktop-only"
         right
       >
-        <q-item-tile stamp>{{data.created_at | time}}</q-item-tile>
+        <q-item-tile stamp>{{isDraft?data.created_at:data.updated_at | time}}</q-item-tile>
         <q-item-tile>
           <img
             v-if="data.path"
@@ -50,7 +53,7 @@
           >
         </div>
         <div>
-          {{data.created_at | time}}
+          {{isDraft?data.created_at:data.updated_at | time}}
         </div>
       </div>
 
@@ -69,7 +72,7 @@ import {
 } from '../utils/constants'
 export default {
   name: 'PostItem',
-  props: ['data', 'index'],
+  props: ['data', 'index', 'type'],
   components: {
     QCard,
     QCardActions,
@@ -90,11 +93,24 @@ export default {
     ...mapActions(['dealShare']),
     openURL,
     open(id) {
-      this.$router.push(`/post/${id}`)
+      if (this.type === 'draft') {
+        this.$router.push(`/post/${id}/edit`)
+      } else {
+        this.$router.push(`/post/${id}`)
+      }
     },
     openIPFSUrl(post) {
       let url = post && post.ipfs_id ? `${IPFS_GATEWAY}${post.ipfs_id}/` : null
       openURL(url)
+    },
+    isPost() {
+      return this.type === 'telegraph'
+    },
+    isDraft() {
+      return this.type === 'draft'
+    },
+    isIPFS() {
+      return this.type === 'ipfs'
     }
   },
   computed: {
@@ -104,11 +120,5 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-.icon-svg {
-  width: 30px;
-  height: 30px;
-  border-radius: 15px;
-  cursor: pointer;
-}
 </style>
 

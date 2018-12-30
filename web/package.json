@@ -1,7 +1,7 @@
 {
   "name": "ever-post",
   "version": "1.0.0",
-  "description": "A Quasar Framework app",
+  "description": "Post your content on telegraph or IPFS forever.",
   "productName": "EverPost",
   "cordovaId": "com.org.ever.post",
   "author": "Caos",

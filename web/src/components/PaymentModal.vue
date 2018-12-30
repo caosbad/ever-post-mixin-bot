@@ -2,11 +2,15 @@
   <q-modal
     v-model="show"
     maximized
+    no-esc-dismiss
+    no-backdrop-dismiss
   >
     <q-modal-layout>
       <q-toolbar
         class="justify-start"
         slot="header"
+        color="white"
+        text-color="black"
       >
         <q-btn
           v-if="pageState==1"
@@ -32,9 +36,10 @@
         >
           <q-search
             class="col-11"
-            inverted
             v-model="search"
-            color="none"
+            color="blue-grey-1"
+            hide-underline
+            inverted-light
           />
 
         </div>
@@ -54,14 +59,14 @@
         />
       </q-toolbar>
 
-      <q-toolbar
+      <!-- <q-toolbar
         v-show="pageState==1"
         slot="footer"
       >
         <q-toolbar-title>
           {{$t('TIPS')}}
         </q-toolbar-title>
-      </q-toolbar>
+      </q-toolbar> -->
 
       <div class="layout-padding">
 

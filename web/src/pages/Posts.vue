@@ -1,184 +1,187 @@
 <template>
   <q-page
-    class="row justify-center"
-    panding
+    padding
+    class="justify-center"
   >
-
+    <div :class="maxWidthClass">
+      <!-- <q-page-sticky
+        position="top"
+        class="row"
+        expand
+      > -->
+      <div class="tabs-container">
+        <q-tabs
+          v-model="selectedTab"
+          align="center"
+          color="gray"
+          @select="tabChange"
+          two-lines
+          inverted
+        >
+          <q-tab
+            slot="title"
+            name="draft"
+            icon="note"
+            :label="$t('DRAFTS')"
+          />
+          <q-tab
+            slot="title"
+            name="telegraph"
+            icon="title"
+            :label="$t('TELEGRAPH')"
+          />
+          <q-tab
+            slot="title"
+            name="ipfs"
+            icon="all_inclusive"
+            :label="$t('IPFS')"
+          />
+        </q-tabs>
+      </div>
+      <!-- </q-page-sticky> -->
+      <list-container
+        :datas="posts"
+        @loadMore="loadMore"
+        :expand="true"
+        :count="count"
+      >
+        <template
+          slot="item"
+          slot-scope="props"
+        >
+          <post-item
+            :type="selectedTab"
+            :data="props.data"
+            :index="props.index"
+          />
+          <separator />
+        </template>
+      </list-container>
+    </div>
   </q-page>
 </template>
+
+<style>
+</style>
 
 <script>
 import {
   QPage,
-  QBtn
+  QList,
+  QListHeader,
+  QItem,
+  QItemMain,
+  QItemSeparator,
+  QItemSide,
+  QTabs,
+  QTab
 } from 'quasar'
 import {
-  mapActions,
-  mapGetters
+  mapActions
 } from 'vuex'
-import VueMarkdown from 'vue-markdown'
-
-// import { toastError } from '../utils/util'
-import MEditor from '../components/MEditor'
+import ListContainer from '../components/ListContainer'
+import PostItem from '../components/PostItem'
+import Separator from '../components/Separator'
+import {
+  toastError
+} from '../utils/util'
+import _ from 'lodash'
 
 export default {
-  name: 'Post',
+  name: 'Index',
   components: {
     QPage,
-    MEditor,
-    QBtn,
-    VueMarkdown
+    QList,
+    QListHeader,
+    QItem,
+    QItemMain,
+    QItemSeparator,
+    QItemSide,
+    ListContainer,
+    PostItem,
+    Separator,
+    QTabs,
+    QTab
   },
   data() {
     return {
-    post: null,
-      user: null,
-      optLoad: false,
-      isSub: false
+      selectedTab: 'draft',
+      pagination: {
+        page: 1,
+        limit: 20
+      },
+      count: 0,
+      posts: []
     }
   },
   mounted() {
-    let params = this.$route.params
-    let id = params['id']
-    if (id) {
-      this.initData(id)
-    }
+    this.getDatas()
   },
   methods: {
-    ...mapActions(['getPost', 'getUser', 'fetch', 'send']),
-    async initData(id) {
+    ...mapActions(['getMyPosts']),
+    async getDatas(append = false) {
       try {
-        let post = await this.getPost(id)
-        this.post = post
-        if (!post.post_id) this.$router.push('/')
-        let user = await this.getUser(post.user_id)
-        this.user = user
-        this.getSubStatus()
-      } catch (e) {
-        console.log(e)
-      }
-    },
-    async toggleSub() {
-      try {
-        this.optLoad = true
-        let params = {
-          id: this.authorId
-        }
-        let res
-        if (this.isSub) {
-          res = await this.fetch({
-            method: 'follow',
-            params
-          })
+        let res = await this.getMyPosts({
+        offset: this.offset,
+        limit: this.pagination.limit,
+        type: this.selectedTab
+      })
+      if (res) {
+        console.log(res)
+        if (append) {
+          this.posts = this.posts.concat(res.posts)
         } else {
-          res = await this.fetch({
-            method: 'unFollow',
-            params
-          })
+          this.posts = res.posts
         }
-        if (res) {
-          console.log(res)
-          this.isSub = !res.success
-        }
-        this.optLoad = false
-      } catch (e) {
-        // TODO
-        this.optLoad = true
-
-        console.log(e)
+        this.count = res.total_count
+      } else {
+        toastError(this.$t('LOAD_ERROR'))
+      }
+      } catch (error) {
+        toastError(this.$t('LOAD_ERROR'))
       }
     },
-    async getSubStatus() {
-      try {
-        let res = await this.fetch({
-          method: 'isSub',
-          params: {
-            id: this.authorId
-          }
-        })
-        if (res) {
-          this.isSub = res.isSub
-        }
-      } catch (e) {
-        // TODO
-        console.log(e)
-      }
+    open(postId) {
+      this.$router.push('/')
     },
-    doPublish() {
-      this.$root.$emit('pay', () => this.publish)
+    async loadMore(index, done) {
+      this.pagination.page++
+      await this.getDatas(true)
+      _.delay(() => done(), 1000)
     },
-    async publish() {
-      try {
-        let post = this.post
-        let res = await this.send({method: 'updatePost', params: {...post, id: post.post_id}})
-        if (res) {
-          this.post = res
-          // todo
-        }
-      } catch (e) {
-
+    tabChange() {
+      this.pagination = {
+        page: 1,
+        limit: 20
       }
+      this.getDatas()
     }
   },
   computed: {
-    ...mapGetters(['userInfo']),
-    editor() {
-      return this.$refs.myQuillEditor.quill
+    offset() {
+      let {
+        page,
+        limit
+      } = this.pagination
+      return (page - 1) * limit
     },
-    locale() {
-      let isZH = this.$i18n.locale === 'zh'
-      return isZH ? 'zh-CN' : 'en'
+    maxWidthClass() {
+      return this.$q.platform.is.desktop ? 'col-10 ' : 'col-12 '
     },
-    isSelf() {
-      return this.userInfo.user_id === this.user.user_id
+    isPost() {
+      return this.selectedTab === 'telegraph'
     },
-    isPub() {
-      return this.post ? this.post.path : false
+    isDraft() {
+      return this.selectedTab === 'draft'
     },
-    isEver() {
-      return this.post ? this.post.ipfs_id : false
-    },
-    authorImg() {
-      if (this.user) {
-        let avatarUrl = this.user.avatar_url
-        let len = avatarUrl.length
-        return avatarUrl.substr(0, len - 3) + '48'
-      } else {
-        return null
-      }
-    },
-    authorId() {
-      return this.user.user_id
+    isIPFS() {
+      return this.selectedTab === 'ipfs'
     }
   }
 }
 </script>
 
-<style lang="stylus" scoped>
-.post-header {
-  display: block;
-  font-size: 2em;
-  margin-block-start: 0.67em;
-  margin-block-end: 0.67em;
-  margin-inline-start: 0px;
-  margin-inline-end: 0px;
-  font-weight: bold;
-}
-
-.author-container {
-  .author-img {
-    border-radius: 100%;
-    border: solid 0.5px;
-    display: inline-block;
-    vertical-align: middle;
-  }
-
-  .author-info {
-    color: #79828b;
-    font-family: CustomSansSerif, sans-serif;
-    display: inline-block;
-    vertical-align: middle;
-    margin: 0 15px;
-  }
+<style lang="stylus">
+.tabs-container {
 }
 </style>

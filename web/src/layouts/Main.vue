@@ -171,7 +171,10 @@ export default {
     this.initEvent()
   },
   mounted() {
-    let lang = getCache('lang') || 'en'
+    let language = navigator.language || navigator.userLanguage
+    language = language.split('-')[0]
+    if (language !== 'zh')language = 'en'
+    let lang = language || getCache('lang')
     this.setLang(lang)
   },
   destroyed() {

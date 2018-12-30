@@ -30,7 +30,7 @@
                 v-if="!isPub"
                 :loading="payLoading"
                 :label="$t('PUBLISH')"
-                color="info"
+                color="info-dark"
                 class="q-mx-xs"
                 @click="doPublish"
                 outline
@@ -41,7 +41,7 @@
               <q-btn
                 v-if="isPub"
                 class="q-mx-xs"
-                color="info"
+                color="grey-9"
                 :label="$t('VIEW_ON_TELEGRAPH')"
                 outline
                 rounded
@@ -54,7 +54,7 @@
                 :loading="payLoading"
                 :label="$t('IPFS_IT')"
                 class="q-mx-xs"
-                color="green"
+                color="cyan"
                 @click="doIPFS"
                 outline
                 rounded
@@ -65,6 +65,7 @@
               v-if="isIPFS"
               :label="$t('VIEW_ON_IPFS')"
               class="q-mx-xs"
+              color="teal-14"
               outline
               rounded
               :disabled="payLoading"
@@ -115,7 +116,7 @@
       >{{post.content}}</vue-markdown>
       <div class="row justify-center q-my-sm">
 
-        <q-btn
+        <!-- <q-btn
           icon="favorite_border"
           round
           dense
@@ -124,7 +125,13 @@
           :disabled="payLoading"
           @click="doDonate"
           flat
-        />
+        /> -->
+        <img
+          class="cursor-pointer icon-svg"
+          :src="donateIcon"
+          alt="$t('DONATE_AUTHOR')"
+          @click="doDonate"
+        >
       </div>
       <div class="row justify-center q-my-sm">
         <p>
@@ -162,6 +169,8 @@ import {
 import {
   renderPostPage
 } from '../utils/ipfsTemp'
+import donateIcon from '../assets/donate.svg'
+// import _ from 'lodash'
 
 export default {
   name: 'Post',
@@ -178,14 +187,19 @@ export default {
       optLoad: false,
       isSub: false,
       payLoading: false,
-      htmlContent: ''
+      htmlContent: '',
+      donateIcon
     }
   },
-  mounted() {
+  async mounted() {
     let params = this.$route.params
     let id = params['id']
+    let donate = this.$route.query['donate']
     if (id) {
-      this.initData(id)
+      await this.initData(id)
+      if (donate) {
+        this.doDonate()
+      }
     }
   },
   methods: {
@@ -248,6 +262,7 @@ export default {
         }
       } catch (e) {
         // TODO
+        // this.done(false)
         console.log(e)
       }
     },
@@ -375,7 +390,7 @@ export default {
     async ipfs(traceId) {
       try {
         let post = this.post
-        let postHtml = renderPostPage(post.title, post.description, this.userInfo.full_name, this.htmlContent)
+        let postHtml = renderPostPage(post.title, post.description, this.userInfo.full_name, this.htmlContent, this.authorId, this.post.post_id)
         this.$save2IPFS(postHtml, async (err, datahash) => {
           if (err) {
             toastError(this.$t('IPFS_ERROR'))
@@ -408,6 +423,15 @@ export default {
       let url = this.post && this.post.ipfs_id ? `${IPFS_GATEWAY}${this.post.ipfs_id}/` : null
       openURL(url)
     }
+    // done(flag = true, cb = () => {}) {
+    //   _.delay(() => {
+    //     this.payLoading = false
+    //     let alert = flag ? toast : toastError
+    //     let msg = flag ? 'SUCCESS' : 'ERROR'
+    //     alert(this.$t(msg))
+    //     if (cb) cb()
+    //   }, 3000)
+    // }
   },
   computed: {
     ...mapGetters(['userInfo']),

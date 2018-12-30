@@ -95,16 +95,16 @@ func handleTransfer(ctx context.Context, transfer bot.TransferView, userId strin
 				if err != nil {
 					return "", bot.BlazeServerError(ctx, err)
 				}
-				return "payment successfully...", nil
+				return "pay successfully...", nil
 			} else if post.Path != "" && post.TraceId != "" && transfer.Amount == config.CNBAmount && transfer.AssetId == config.CNBAssetId {
 				post.TraceId = transfer.TraceId
 				_, err = models.UpdatePostTraceId(ctx, post)
 				if err != nil {
 					return "", bot.BlazeServerError(ctx, err)
 				}
-				return "payment successfully...", nil
+				return "pay successfully...", nil
 			} else {
-				return "Donation successfully", nil
+				return "Donate successfully", nil
 			}
 
 		} else { // vote article payment
@@ -119,7 +119,7 @@ func handleTransfer(ctx context.Context, transfer bot.TransferView, userId strin
 			} else if support, err := models.CreateSupport(ctx, post, transfer); err != nil || support == nil {
 				return "", bot.BlazeServerError(ctx, err)
 			} else {
-				return "Donation successfully", nil
+				return "Donate successfully", nil
 			}
 		}
 

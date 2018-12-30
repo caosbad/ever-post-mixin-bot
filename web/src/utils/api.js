@@ -82,7 +82,7 @@ api.getAsset = (params) => {
   return fetch(urls.asset(), 'get', params)
 }
 api.getMyPosts = (params) => {
-  return fetch(urls.getPosts(), 'get', params)
+  return fetch(urls.myPost(), 'get', params)
 }
 api.getMyDrafts = (params) => {
   return fetch(urls.getDrafts(), 'get', params)

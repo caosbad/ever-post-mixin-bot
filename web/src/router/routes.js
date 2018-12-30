@@ -21,11 +21,6 @@ export default [{
         component: load('Draft')
       },
       {
-        path: 'somepage/:id',
-        name: 'marketDetail',
-        component: load('MarketDetail')
-      },
-      {
         path: 'post/:id',
         name: 'Post',
         component: load('Post')

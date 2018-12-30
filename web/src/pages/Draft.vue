@@ -78,6 +78,17 @@
             {{$t('REPUBLISH')}}
           </q-btn>
           <q-btn
+            v-if="postId"
+            :disabled="loading"
+            class="col-auto m-t-1 self-center"
+            color="primary"
+            outline
+            @click="preview"
+          >
+            {{$t('PREVIEW')}}
+          </q-btn>
+
+          <q-btn
             outline
             color="info"
             :disabled="loading"
@@ -90,6 +101,7 @@
             v-if="!isPub"
             color="negative"
             outline
+            :disabled="loading"
             class="col-auto m-t-1 self-center"
             @click="callDelete"
           >
@@ -223,7 +235,7 @@ export default {
       // this.$v.post.content.$touch()
     },
     submit() {
-      this.updatePost(this.post.content, this.htmlContent)
+      this.updateDraft(this.post.content, this.htmlContent)
     },
     async callDelete() {
       let t = this.$t
@@ -235,7 +247,6 @@ export default {
     },
     onSave(val, html) {
       if (!this.checkForm() || this.loading) return
-      this.loading = true
       if (this.isNewDraft) {
         this.createDraft(val)
       } else {
@@ -243,6 +254,7 @@ export default {
       }
     },
     async createDraft(val) {
+      this.loading = true
       try {
         let post = this.post
         let res = await this.send({
@@ -253,16 +265,20 @@ export default {
         })
         if (res) {
           // this.post = res
+          this.post = _.merge(res, this.post)
+          console.log(this.post)
           // toast(this.$t('SAVE_SUCCESS'))
+          this.done()
         }
       } catch (e) {
-        this.done()
+        this.done(false)
       }
     },
     rePublish() {
       this.updatePost(this.post.content, this.htmlContent)
     },
     async updateDraft(val, htmlContent) {
+      this.loading = true
       try {
         let post = this.post
         let res = await this.send({
@@ -284,6 +300,7 @@ export default {
       }
     },
     async updatePost(val, htmlContent) {
+      this.loading = true
       try {
         let post = this.post
         let res = await this.send({
@@ -295,8 +312,6 @@ export default {
           }
         })
         if (res) {
-          // this.post = res
-          // toast(this.$t('SAVE_SUCCESS'))
           this.done()
         }
       } catch (e) {
@@ -355,6 +370,9 @@ export default {
         content: '',
         description: ''
       }
+    },
+    preview() {
+      this.$router.push(`/post/${this.postId}`)
     }
   },
   computed: {
@@ -371,6 +389,9 @@ export default {
     },
     draftId() {
       return this.$route.params ? this.$route.params.id : ''
+    },
+    postId() {
+      return this.post ? this.post.post_id : ''
     }
   },
   watch: {

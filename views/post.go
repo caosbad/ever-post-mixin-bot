@@ -22,10 +22,10 @@ type PostView struct {
 	AvatarURL     string    `json:"avatar_url"`
 }
 
-// type PostsView struct {
-// 	TotalCount 		int  `json:"total_count"`
-// 	Posts 				[]telegraph.Page `json:"posts"`
-// }
+type PostsListView struct {
+	TotalCount int              `json:"total_count"`
+	Posts      []      PostView `json:"posts"`
+}
 
 func buildPostView(post *models.Post) PostView {
 	view := PostView{
@@ -48,7 +48,7 @@ func buildPostView(post *models.Post) PostView {
 // 	return list
 // }
 
-func buildPostsView(list []*models.Post) []PostView {
+func buildPostsView(list []*models.Post, count int) *PostsListView {
 	var posts []PostView
 	for _, post := range list {
 		post := PostView{
@@ -64,10 +64,14 @@ func buildPostsView(list []*models.Post) []PostView {
 		}
 		posts = append(posts, post)
 	}
-	return posts
+	var data = &PostsListView{
+		Posts:      posts,
+		TotalCount: count,
+	}
+	return data
 }
 
-func buildPostsItemsView(list []*models.PostListItem) []PostView {
+func buildPostsItemsView(list []*models.PostListItem, count int) *PostsListView {
 	var posts []PostView
 	for _, post := range list {
 		post := PostView{
@@ -84,18 +88,22 @@ func buildPostsItemsView(list []*models.PostListItem) []PostView {
 		}
 		posts = append(posts, post)
 	}
-	return posts
+	var data = &PostsListView{
+		Posts:      posts,
+		TotalCount: count,
+	}
+	return data
 }
 
 func RenderPost(w http.ResponseWriter, r *http.Request, post *models.Post) {
 	RenderDataResponse(w, r, buildPostView(post))
 }
 
-func RenderPosts(w http.ResponseWriter, r *http.Request, posts []*models.Post) {
-	RenderDataResponse(w, r, buildPostsView(posts))
+func RenderPosts(w http.ResponseWriter, r *http.Request, posts []*models.Post, count int) {
+	RenderDataResponse(w, r, buildPostsView(posts, count))
 }
-func RenderAllPosts(w http.ResponseWriter, r *http.Request, posts []*models.PostListItem) {
-	RenderDataResponse(w, r, buildPostsItemsView(posts))
+func RenderAllPosts(w http.ResponseWriter, r *http.Request, posts []*models.PostListItem, count int) {
+	RenderDataResponse(w, r, buildPostsItemsView(posts, count))
 }
 
 func RenderTelegraphPosts(w http.ResponseWriter, r *http.Request, list *telegraph.PageList) {

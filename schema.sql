@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
   access_token      VARCHAR(512) DEFAULT '',
   full_name         VARCHAR(512),
   avatar_url        VARCHAR(1024),
-  telegraph_token   VARCHAR(64),
+  telegraph_token   VARCHAR(256),
   created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   expire_at         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW() 
 );
@@ -16,11 +16,11 @@ CREATE TABLE IF NOT EXISTS posts (
   path	          VARCHAR(256),
   telegraph_url	  VARCHAR(1024),
   description	    VARCHAR(1024),
-  ipfs_id         VARCHAR(64),
-  trace_id          VARCHAR(36),
+  ipfs_id         VARCHAR(128),
+  trace_id        VARCHAR(36),
   content         TEXT NOT NULL,
   user_id	        VARCHAR(36) NOT NULL,
-  created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+  created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 

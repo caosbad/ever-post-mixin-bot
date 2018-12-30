@@ -31,7 +31,7 @@ const ASSETS = {
 }
 
 const OPT_PIRCE = {
-  PUB: 1,
+  PUB: 100,
   IPFS: 100
 }
 
@@ -75,7 +75,7 @@ const urls = {
     return `${serverHost}/post`
   },
   myPost: () => {
-    return `${serverHost}/myPosts`
+    return `${serverHost}/myPosts/:type`
   },
   subscriber: () => {
     return `${serverHost}/subscriber/:id`

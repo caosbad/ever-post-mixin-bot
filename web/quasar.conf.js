@@ -46,7 +46,7 @@ module.exports = function (ctx) {
     },
     // framework: 'all' --- includes everything; for dev only!
     framework: {
-      components: ['QModal', 'QTooltip', 'QAjaxBar', 'QInfiniteScroll'],
+      components: ['QModal', 'QTooltip', 'QAjaxBar', 'QInfiniteScroll', 'QPageSticky'],
       directives: ['CloseOverlay'],
       // Quasar plugins
       plugins: [

@@ -9,6 +9,7 @@
       separator
       no-border
     >
+      <slot name="header" />
       <slot
         name="item"
         v-for="(data, idx) in getDatas "

@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/MixinNetwork/bot-api-go-client"
+	"net/url"
+
 	//"github.com/crossle/hacker-news-mixin-bot/config"
 	"github.com/caosbad/ever-post-mixin-bot/config"
 	"github.com/caosbad/ever-post-mixin-bot/middlewares"
@@ -27,7 +29,7 @@ func registerPosts(router *httptreemux.TreeMux) {
 	router.PUT("/posts/:id", impl.updatePost)
 	router.POST("/posts/:id", impl.publishPost)
 	router.GET("/verify/:id", impl.verifyTrace)
-	router.GET("/myPosts", impl.getUserPosts)
+	router.GET("/myPosts/:type", impl.getUserPosts)
 	router.GET("/posts", impl.getAllPosts)
 
 	router.PUT("/drafts/:id", impl.updateDraft)
@@ -79,7 +81,7 @@ func (impl *postsImpl) publishPost(w http.ResponseWriter, r *http.Request, param
 			views.RenderErrorResponse(w, r, err)
 		} else {
 			views.RenderPost(w, r, post)
-			sendNotifyToSubscribers(r.Context(), post)
+			//sendNotifyToSubscribers(r.Context(), post)
 		}
 	}
 
@@ -89,9 +91,9 @@ func sendNotifyToSubscribers(ctx context.Context, post *models.Post) {
 	subscribers, err := models.ListSubscribers(ctx, post.UserId)
 	if err == nil {
 		for _, sub := range subscribers {
-			conversationId := bot.UniqueConversationId(config.ClientId, sub.UserId)
-			data := base64.StdEncoding.EncodeToString([]byte(post.Title + " " + post.TelegraphUrl))
-			err := bot.PostMessage(ctx, conversationId, sub.UserId, bot.UuidNewV4().String(), "PLAIN_TEXT", data, config.ClientId, config.SessionId, config.PrivateKey)
+			conversationId := bot.UniqueConversationId(config.ClientId, sub.SubscriberId)
+			data := base64.StdEncoding.EncodeToString([]byte(post.Title + " " + "https://ipfs.io/ipfs/" + post.IpfsId))
+			err := bot.PostMessage(ctx, conversationId, sub.SubscriberId, bot.UuidNewV4().String(), "PLAIN_TEXT", data, config.ClientId, config.SessionId, config.PrivateKey)
 			if err != nil {
 				fmt.Print(err)
 			}
@@ -118,7 +120,6 @@ func (impl *postsImpl) updatePost(w http.ResponseWriter, r *http.Request, params
 		views.RenderErrorResponse(w, r, err)
 	} else {
 		views.RenderPost(w, r, post)
-		sendNotifyToSubscribers(r.Context(), post)
 	}
 }
 
@@ -140,6 +141,9 @@ func (impl *postsImpl) updateDraft(w http.ResponseWriter, r *http.Request, param
 	if post, err := models.UpdateDraft(r.Context(), current, body); err != nil {
 		views.RenderErrorResponse(w, r, err)
 	} else {
+		if body.IpfsId != "" {
+			sendNotifyToSubscribers(r.Context(), post)
+		}
 		views.RenderPost(w, r, post)
 	}
 }
@@ -162,14 +166,7 @@ func (impl *postsImpl) deleteDraft(w http.ResponseWriter, r *http.Request, param
 }
 
 func (impl *postsImpl) getUserTelegraphPosts(w http.ResponseWriter, r *http.Request, params map[string]string) {
-	var offset, limit = 0, 20
-	var err error
-	if val, ok := params["offset"]; ok {
-		offset, err = strconv.Atoi(val)
-	}
-	if val, ok := params["limit"]; ok {
-		limit, err = strconv.Atoi(val)
-	}
+	limit, offset, err := getUrlParams(r)
 	if err != nil {
 		views.RenderErrorResponse(w, r, errors.New("Params error"))
 		return
@@ -186,26 +183,24 @@ func (impl *postsImpl) getUserTelegraphPosts(w http.ResponseWriter, r *http.Requ
 }
 
 func (impl *postsImpl) getUserPosts(w http.ResponseWriter, r *http.Request, params map[string]string) {
-	var offset, limit = 0, 20
-	var err error
-	if val, ok := params["offset"]; ok {
-		offset, err = strconv.Atoi(val)
-	}
-	if val, ok := params["limit"]; ok {
-		limit, err = strconv.Atoi(val)
-	}
+	limit, offset, err := getUrlParams(r)
 	if err != nil {
 		views.RenderErrorResponse(w, r, errors.New("Params error"))
 		return
 	}
+	var postType = "draft"
+	if val, ok := params["type"]; ok {
+		postType = val
+	}
 
 	current := middlewares.CurrentUser(r)
-	if list, err := models.FindAllPostsByUser(r.Context(), current, offset, limit); err != nil {
+
+	if list, count, err := models.FindPostsByUser(r.Context(), current, offset, limit, postType); err != nil {
 		views.RenderErrorResponse(w, r, err)
 	} else if list == nil {
 		views.RenderErrorResponse(w, r, session.NotFoundError(r.Context()))
 	} else {
-		views.RenderPosts(w, r, list)
+		views.RenderPosts(w, r, list, count)
 	}
 }
 
@@ -241,47 +236,33 @@ func (impl *postsImpl) getUserDraft(w http.ResponseWriter, r *http.Request, para
 }
 
 func (impl *postsImpl) getUserDrafts(w http.ResponseWriter, r *http.Request, params map[string]string) {
-	var offset, limit = 0, 20
-	var err error
-	if val, ok := params["offset"]; ok {
-		offset, err = strconv.Atoi(val)
-	}
-	if val, ok := params["limit"]; ok {
-		limit, err = strconv.Atoi(val)
-	}
+	limit, offset, err := getUrlParams(r)
 	if err != nil {
 		views.RenderErrorResponse(w, r, errors.New("Params error"))
 		return
 	}
 
 	current := middlewares.CurrentUser(r)
-	if list, err := models.FindDraftsByUser(r.Context(), current, offset, limit); err != nil {
+	if list, count, err := models.FindDraftsByUser(r.Context(), current, offset, limit); err != nil {
 		views.RenderErrorResponse(w, r, err)
 	} else if list == nil {
 		views.RenderErrorResponse(w, r, session.NotFoundError(r.Context()))
 	} else {
-		views.RenderPosts(w, r, list)
+		views.RenderPosts(w, r, list, count)
 	}
 }
 
 func (impl *postsImpl) getAllPosts(w http.ResponseWriter, r *http.Request, params map[string]string) {
-	var offset, limit = 0, 20
-	var err error
-	if val, ok := params["offset"]; ok {
-		offset, err = strconv.Atoi(val)
-	}
-	if val, ok := params["limit"]; ok {
-		limit, err = strconv.Atoi(val)
-	}
+	limit, offset, err := getUrlParams(r)
 	if err != nil {
 		views.RenderErrorResponse(w, r, errors.New("Params error"))
 	}
-	if list, err := models.FindAllPosts(r.Context(), offset, limit); err != nil {
+	if list, count, err := models.FindAllPosts(r.Context(), offset, limit); err != nil {
 		views.RenderErrorResponse(w, r, err)
 	} else if list == nil {
 		views.RenderErrorResponse(w, r, session.NotFoundError(r.Context()))
 	} else {
-		views.RenderAllPosts(w, r, list)
+		views.RenderAllPosts(w, r, list, count)
 	}
 }
 
@@ -296,4 +277,19 @@ func (impl *postsImpl) verifyTrace(w http.ResponseWriter, r *http.Request, param
 	} else {
 		views.RenderPost(w, r, post)
 	}
+}
+
+func getUrlParams(r *http.Request) (int, int, error) {
+	var offset, limit = 0, 20
+	query, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return 0, 0, err
+	}
+	if val, ok := query["offset"]; ok {
+		offset, err = strconv.Atoi(val[0])
+	}
+	if val, ok := query["limit"]; ok {
+		limit, err = strconv.Atoi(val[0])
+	}
+	return limit, offset, nil
 }
