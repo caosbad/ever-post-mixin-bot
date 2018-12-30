@@ -43,6 +43,6 @@ yarn-error.log*
 nginx.conf
 
 config/*
-
+web
 
 
