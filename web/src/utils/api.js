@@ -17,6 +17,7 @@ axios.interceptors.request.use(config => {
 
 axios.interceptors.response.use(response => {
   if (response.data.error && response.data.error.code === 401) {
+    debugger
     location.replace(`https://mixin.one/oauth/authorize?client_id=${BOT.clientId}&scope=${BOT.scope}&response_type=code`)
     return Promise.reject(response)
   }
