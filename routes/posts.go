@@ -25,18 +25,18 @@ type postsImpl struct{}
 
 func registerPosts(router *httptreemux.TreeMux) {
 	impl := &postsImpl{}
-	router.GET("/api/posts/:id", impl.getPost)
-	router.PUT("/api/posts/:id", impl.updatePost)
-	router.POST("/api/posts/:id", impl.publishPost)
-	router.GET("/api/verify/:id", impl.verifyTrace)
-	router.GET("/api/myPosts/:type", impl.getUserPosts)
-	router.GET("/api/posts", impl.getAllPosts)
+	router.GET("/posts/:id", impl.getPost)
+	router.PUT("/posts/:id", impl.updatePost)
+	router.POST("/posts/:id", impl.publishPost)
+	router.GET("/verify/:id", impl.verifyTrace)
+	router.GET("/myPosts/:type", impl.getUserPosts)
+	router.GET("/posts", impl.getAllPosts)
 
-	router.PUT("/api/drafts/:id", impl.updateDraft)
-	router.POST("/api/drafts", impl.createDraft)
-	router.DELETE("/api/drafts/:id", impl.deleteDraft)
-	router.GET("/api/drafts/:id", impl.getUserDraft)
-	router.GET("/api/drafts", impl.getUserDrafts)
+	router.PUT("/drafts/:id", impl.updateDraft)
+	router.POST("/drafts", impl.createDraft)
+	router.DELETE("/drafts/:id", impl.deleteDraft)
+	router.GET("/drafts/:id", impl.getUserDraft)
+	router.GET("/drafts", impl.getUserDrafts)
 
 	// router.GET("/posts/:id", impl.getPost)
 }
