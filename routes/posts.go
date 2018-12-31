@@ -259,8 +259,6 @@ func (impl *postsImpl) getAllPosts(w http.ResponseWriter, r *http.Request, param
 	}
 	if list, count, err := models.FindAllPosts(r.Context(), offset, limit); err != nil {
 		views.RenderErrorResponse(w, r, err)
-	} else if list == nil {
-		views.RenderErrorResponse(w, r, session.NotFoundError(r.Context()))
 	} else {
 		views.RenderAllPosts(w, r, list, count)
 	}
