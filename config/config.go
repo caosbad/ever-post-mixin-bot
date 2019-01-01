@@ -16,8 +16,8 @@ const ( // CNB
 
 const (
 	DatabaseUser     = "postgres"
-	DatabasePassword = "Everpost7181"
-	DatabaseHost     = "35.221.164.60"
+	DatabasePassword = "postgres"
+	DatabaseHost     = "localhost"
 	DatabaseName     = "postgres"
 	DatabasePort     = 5432
 )
