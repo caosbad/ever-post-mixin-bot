@@ -64,6 +64,7 @@
           class="q-mx-sm"
           flat
           round
+          outline
           dense
           @click="fetchUser"
           icon="account_circle"

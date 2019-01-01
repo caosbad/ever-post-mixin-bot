@@ -75,7 +75,7 @@ type PostBody struct {
 	IpfsId      string `json:"ipfsId"`
 }
 
-var postCols = []string{"post_id", "title", "description", "content", "path", "user_id", "trace_id", "telegraph_url", "ipfs_id"}
+var postCols = []string{"post_id", "title", "description", "content", "path", "user_id", "trace_id", "telegraph_url", "ipfs_id", "created_at"}
 
 func CreateDraft(ctx context.Context, user *User, title, description, content string) (*Post, error) {
 
