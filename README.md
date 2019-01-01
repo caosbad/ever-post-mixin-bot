@@ -1,2 +1,3 @@
-# channel-father-mixin-bot
-Go implementation of Mixin Channel like Telegram Channel
+# ever-post-mixin-bot
+
+post your content on Telegraph and IPFS,  based on Mixin Network
