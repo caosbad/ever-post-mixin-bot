@@ -96,7 +96,7 @@ func handleTransfer(ctx context.Context, transfer bot.TransferView, userId strin
 					return "", bot.BlazeServerError(ctx, err)
 				}
 				return "pay successfully...", nil
-			} else if post.Path != "" && post.TraceId != "" && transfer.Amount == config.CNBAmount && transfer.AssetId == config.CNBAssetId {
+			} else if post.Path != "" && post.TraceId != "" && transfer.Amount == config.XINAmount && transfer.AssetId == config.XINAssetId { // IPFS
 				post.TraceId = transfer.TraceId
 				_, err = models.UpdatePostTraceId(ctx, post)
 				if err != nil {
@@ -104,7 +104,7 @@ func handleTransfer(ctx context.Context, transfer bot.TransferView, userId strin
 				}
 				return "pay successfully...", nil
 			} else {
-				return "Donate successfully", nil
+				return "Donate successfully...", nil
 			}
 
 		} else { // vote article payment

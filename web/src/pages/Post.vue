@@ -105,7 +105,7 @@
             </q-btn>
             <br />
             <span class="q-mt-xs">
-              {{post.created_at}}
+              {{post.created_at | time}}
             </span>
           </p>
         </div>
@@ -114,7 +114,7 @@
         class="q-my-lg"
         @rendered="(html)=>htmlContent=html"
       >{{post.content}}</vue-markdown>
-      <div class="row justify-center q-my-sm">
+      <div class="row justify-center q-mt-lg">
 
         <!-- <q-btn
           icon="favorite_border"
@@ -378,7 +378,7 @@ export default {
       this.payLoading = true
       let traceId = uuidv4()
       let url = this.getPayUrl({
-        asset_id: ASSETS.CNB,
+        asset_id: ASSETS.XIN,
         amount: OPT_PIRCE.IPFS
       }, traceId)
       let tab = window.open('')
@@ -398,7 +398,7 @@ export default {
             this.payLoading = false
             return null
           } else if (!err && datahash) {
-            openURL(`${IPFS_GATEWAY}${datahash}/`)
+            // openURL(`${IPFS_GATEWAY}${datahash}/`)
             let res = await this.send({
               method: 'updateDraft',
               params: {
@@ -409,6 +409,7 @@ export default {
             })
             if (res.ipfs_id) {
               this.payLoading = false
+              this.$t('SUCCESS')
               this.initData(res.post_id)
             }
           }

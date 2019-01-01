@@ -62,16 +62,17 @@ export const renderPostPage = (title, desc, author, content, userId, postId) => 
 
           var donate = document.getElementById('donate')
           donate.addEventListener('click', function(e){
-            // TODO 
-            if(flag){
-              window.location.href='http://everpost.one/post/${postId}?donate=true'
-            } else {
-              window.location.href='mixin://transfer/${userId}'
-            }
+            window.location.href='http://everpost.one/post/${postId}?donate=true'
+            // TODO  
+            // if(flag){
+            //   window.location.href='http://everpost.one/post/${postId}?donate=true'
+            // } else {
+            //   window.location.href='mixin://transfer/${userId}'
+            // }
           })
 
           var inp = document.querySelector('#share input')
-            inp.value = location.href
+            inp.value = 'http://everpost.one/post/${postId}'
           
           share_a.addEventListener('click', function(e){
             e.preventDefault();

@@ -10,7 +10,7 @@ const I18N_OPT = [{
 ]
 
 const mixinHost = 'https://api.mixin.one'
-const serverHost = '/api'
+const serverHost = 'http://localhost:7008'
 const IPFS_NODE = 'ipfs.infura.io'
 const IPFS_GATEWAY = 'https://ipfs.io/ipfs/'
 // const dappId = {
@@ -32,7 +32,7 @@ const ASSETS = {
 
 const OPT_PIRCE = {
   PUB: 100,
-  IPFS: 100
+  IPFS: 0.01
 }
 
 const PAY_URL = `https://mixin.one/pay?recipient=${BOT.clientId}&`
