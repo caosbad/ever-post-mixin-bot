@@ -37,18 +37,6 @@
                 rounded
                 size="sm"
               />
-
-              <q-btn
-                v-if="isPub"
-                class="q-mx-xs"
-                color="grey-9"
-                :label="$t('VIEW_ON_TELEGRAPH')"
-                outline
-                rounded
-                :disabled="payLoading"
-                @click="viewTelegraph"
-                size="sm"
-              />
               <q-btn
                 v-if="isPub && !isIPFS"
                 :loading="payLoading"
@@ -61,6 +49,17 @@
                 size="sm"
               />
             </div>
+            <q-btn
+              v-if="isPub"
+              class="q-mx-xs"
+              color="grey-9"
+              :label="$t('VIEW_ON_TELEGRAPH')"
+              outline
+              rounded
+              :disabled="payLoading"
+              @click="viewTelegraph"
+              size="sm"
+            />
             <q-btn
               v-if="isIPFS"
               :label="$t('VIEW_ON_IPFS')"

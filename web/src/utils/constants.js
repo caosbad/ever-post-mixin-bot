@@ -10,8 +10,8 @@ const I18N_OPT = [{
 ]
 
 const mixinHost = 'https://api.mixin.one'
-// const serverHost = '/api'
-const serverHost = 'http://localhost:7008'
+const serverHost = '/api'
+// const serverHost = 'http://localhost:7008'
 const IPFS_NODE = 'ipfs.infura.io'
 const IPFS_GATEWAY = 'https://ipfs.io/ipfs/'
 // const dappId = {
