@@ -8,7 +8,8 @@ module.exports = function (ctx) {
       'axios',
       'vuelidate',
       'ipfs',
-      'filters'
+      'filters',
+      'disqus'
       // 'quillEditor'
     ],
     css: [

@@ -21,9 +21,7 @@ const IPFS_GATEWAY = 'https://ipfs.io/ipfs/'
 
 const BOT = {
   clientId: 'ee7ef479-e9e7-44ba-9755-6be4e1d826d7',
-  scope: 'PROFILE:READ+ASSETS:READ',
-  // scope: 'PROFILE:READ',
-  clientSecret: 'f245bfa9bb79b5e076e2f905e2d66f7c658057d069a2d28c704aa263db87c0e8'
+  scope: 'PROFILE:READ+ASSETS:READ'
 }
 
 const ASSETS = {

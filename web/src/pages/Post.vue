@@ -137,6 +137,16 @@
           {{$t('DONATE_AUTHOR')}}
         </p>
       </div>
+      <div
+        v-if="post"
+        class="comments"
+      >
+        <vue-disqus
+          shortname="everpost"
+          :identifier="post.post_id"
+          :url="postLink"
+        ></vue-disqus>
+      </div>
     </div>
   </q-page>
 </template>
@@ -470,6 +480,9 @@ export default {
       let classStr = 'col-12 flex items-center btns '
       let barClass = this.$q.platform.is.desktop ? 'justify-end' : 'justify-start'
       return classStr + barClass
+    },
+    postLink() {
+      return `http://everpost.one/post/${this.post.post_id}`
     }
   }
 }
