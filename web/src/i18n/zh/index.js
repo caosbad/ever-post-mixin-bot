@@ -121,7 +121,7 @@ const lang = {
   'IPFS_IT': '永久发布到 IPFS',
   'VIEW_ON_IPFS': '查看 IPFS',
   'UNFOLLOW': '取消订阅',
-  'FOLLOW': '订阅的作者，有更新通知我',
+  'FOLLOW': '订阅作者，有更新通知我',
   'DONATE_AUTHOR': '赞赏作者',
   'DRAFTS': '草稿箱',
   'TELEGRAPH': '已发布',

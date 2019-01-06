@@ -88,11 +88,15 @@ func (impl *postsImpl) publishPost(w http.ResponseWriter, r *http.Request, param
 }
 
 func sendNotifyToSubscribers(ctx context.Context, post *models.Post) {
-	subscribers, err := models.ListSubscribers(ctx, post.UserId)
-	if err == nil {
+	if subscribers, err := models.ListSubscribers(ctx, post.UserId); err!=nil {
+		return
+	} else if user, err := models.FindUserById(ctx, post.UserId) ; err!=nil {
+		return
+	} else {
+		content := user.FullName + " : " + post.Title + " —— " + "http://everpost.one/post/" + post.PostId + " \n " + "https://ipfs.io/ipfs/" + post.IpfsId
 		for _, sub := range subscribers {
 			conversationId := bot.UniqueConversationId(config.ClientId, sub.SubscriberId)
-			data := base64.StdEncoding.EncodeToString([]byte(post.Title + " " + "https://ipfs.io/ipfs/" + post.IpfsId))
+			data := base64.StdEncoding.EncodeToString([]byte(content))
 			err := bot.PostMessage(ctx, conversationId, sub.SubscriberId, bot.UuidNewV4().String(), "PLAIN_TEXT", data, config.ClientId, config.SessionId, config.PrivateKey)
 			if err != nil {
 				fmt.Print(err)

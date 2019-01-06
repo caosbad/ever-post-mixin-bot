@@ -10,11 +10,8 @@
       <div>
         <div class="row q-py-lg">
           <div class="post-header col-12">{{post.title}}</div>
-          <div
-            v-if="userInfo"
-            :class="btnBarClass"
-          >
-            <div v-if="isSelf">
+          <div :class="btnBarClass">
+            <div v-if="isSelf && userInfo">
               <q-btn
                 v-if="!isIPFS"
                 :label="$t('EDIT')"
@@ -71,8 +68,8 @@
               @click="openIPFSUrl"
               size="sm"
             />
-
           </div>
+
         </div>
         <div
           v-if="user"
@@ -132,7 +129,7 @@
           @click="doDonate"
         >
       </div>
-      <div class="row justify-center q-my-sm">
+      <div class="row justify-center q-my-lg">
         <p>
           {{$t('DONATE_AUTHOR')}}
         </p>
