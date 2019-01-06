@@ -63,6 +63,7 @@ func (impl *postsImpl) createDraft(w http.ResponseWriter, r *http.Request, param
 }
 
 func (impl *postsImpl) publishPost(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	var isFirstPublished = false
 	postId := params["id"]
 	if _, err := uuid.FromString(postId); err != nil {
 		views.RenderErrorResponse(w, r, session.BadRequestError(r.Context()))
@@ -70,6 +71,9 @@ func (impl *postsImpl) publishPost(w http.ResponseWriter, r *http.Request, param
 	} else if post, err := models.FindPostByPostId(r.Context(), postId); err != nil || post == nil {
 		views.RenderErrorResponse(w, r, session.BadRequestError(r.Context()))
 	} else if post != nil {
+		if post.Path == "" {
+			isFirstPublished = true
+		}
 		var body models.PostBody
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.TraceId != post.TraceId {
 			views.RenderErrorResponse(w, r, session.BadRequestError(r.Context()))
@@ -80,8 +84,10 @@ func (impl *postsImpl) publishPost(w http.ResponseWriter, r *http.Request, param
 		if post, err := models.PublishPost(r.Context(), current, body); err != nil {
 			views.RenderErrorResponse(w, r, err)
 		} else {
+			if isFirstPublished {
+				sendNotifyToSubscribers(r.Context(), post)
+			}
 			views.RenderPost(w, r, post)
-			//sendNotifyToSubscribers(r.Context(), post)
 		}
 	}
 
@@ -93,7 +99,10 @@ func sendNotifyToSubscribers(ctx context.Context, post *models.Post) {
 	} else if user, err := models.FindUserById(ctx, post.UserId) ; err!=nil {
 		return
 	} else {
-		content := user.FullName + " : " + post.Title + " —— " + "http://everpost.one/post/" + post.PostId + " \n " + "https://ipfs.io/ipfs/" + post.IpfsId
+		content := user.FullName + " : " + post.Title + " —— " + "http://everpost.one/post/" + post.PostId
+		if post.IpfsId != "" {
+			content +=  " \n " + "https://ipfs.io/ipfs/" + post.IpfsId
+		}
 		for _, sub := range subscribers {
 			conversationId := bot.UniqueConversationId(config.ClientId, sub.SubscriberId)
 			data := base64.StdEncoding.EncodeToString([]byte(content))

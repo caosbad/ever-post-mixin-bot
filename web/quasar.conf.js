@@ -9,7 +9,8 @@ module.exports = function (ctx) {
       'vuelidate',
       'ipfs',
       'filters',
-      'disqus'
+      'disqus',
+      'analytics'
       // 'quillEditor'
     ],
     css: [

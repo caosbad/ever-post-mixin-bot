@@ -6627,6 +6627,10 @@ vm-browserify@0.0.4:
   dependencies:
     indexof "0.0.1"
 
+vue-analytics@^5.16.1:
+  version "5.16.1"
+  resolved "http://registry.npm.taobao.org/vue-analytics/download/vue-analytics-5.16.1.tgz#2fa909a245e1cee9993a69f0b72caf1dd6126c10"
+
 vue-disqus@^3.0.5:
   version "3.0.5"
   resolved "http://registry.npm.taobao.org/vue-disqus/download/vue-disqus-3.0.5.tgz#8d0dd5cabdba7c47f82d129d2907a64366842fa8"
