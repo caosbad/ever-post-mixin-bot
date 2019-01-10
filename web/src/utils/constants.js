@@ -78,6 +78,9 @@ const urls = {
   },
   subscriber: () => {
     return `${serverHost}/subscriber/:id`
+  },
+  notify: () => {
+    return `${serverHost}/notify/:id`
   }
 }
 
