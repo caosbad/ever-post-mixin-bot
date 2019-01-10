@@ -129,15 +129,19 @@ export const renderPostPage = (title, desc, author, content, userId, postId) => 
     <div id="disqus_thread" style="padding:10%;"></div>
     <script>
 
-/**
-*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
-/*
+
 var disqus_config = function () {
 this.page.url = 'http://everpost.one/post/${postId}';  // Replace PAGE_URL with your page's canonical URL variable
+this.page.title = '${title}'
 this.page.identifier = '${postId}'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+this.callbacks.onNewComment = [function(comment) {
+// TODO
+var xhr = new XMLHttpRequest();
+xhr.open('POST', 'http://everpost.one/notify/${postId}');
+xhr.send({'commentId':comment.id,'text':comment.text});
+}];
 };
-*/
+
 (function() { // DON'T EDIT BELOW THIS LINE
 var d = document, s = d.createElement('script');
 s.src = 'https://everpost.disqus.com/embed.js';

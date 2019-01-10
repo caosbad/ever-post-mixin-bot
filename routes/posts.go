@@ -37,6 +37,7 @@ func registerPosts(router *httptreemux.TreeMux) {
 	router.DELETE("/drafts/:id", impl.deleteDraft)
 	router.GET("/drafts/:id", impl.getUserDraft)
 	router.GET("/drafts", impl.getUserDrafts)
+	router.POST("/notify/:id", impl.notifyAuthor)
 
 	// router.GET("/posts/:id", impl.getPost)
 }
@@ -92,16 +93,41 @@ func (impl *postsImpl) publishPost(w http.ResponseWriter, r *http.Request, param
 	}
 
 }
+func (impl *postsImpl) notifyAuthor(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	postId := params["id"]
+	var body struct {
+		CommentId string `json:"commentId"`
+		Text      string `json:"text"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil && body.CommentId != "" {
+		views.RenderErrorResponse(w, r, session.BadRequestError(r.Context()))
+		return
+	} else if _, err := uuid.FromString(postId); err != nil {
+		views.RenderErrorResponse(w, r, session.BadRequestError(r.Context()))
+		return
+	} else if post, err := models.FindPostByPostId(r.Context(), postId); err != nil || post == nil {
+		views.RenderErrorResponse(w, r, session.BadRequestError(r.Context()))
+	} else {
+		content := "you have a new comment on post :" + post.Title + " ———— " + " \n 「" + body.Text + "」\n see it here " + "http://everpost.one/post/" + post.PostId
+		conversationId := bot.UniqueConversationId(config.ClientId, post.UserId)
+		data := base64.StdEncoding.EncodeToString([]byte(content))
+		err := bot.PostMessage(r.Context(), conversationId, post.UserId, bot.UuidNewV4().String(), "PLAIN_TEXT", data, config.ClientId, config.SessionId, config.PrivateKey)
+		if err != nil {
+			fmt.Print(err)
+		}
+	}
+
+}
 
 func sendNotifyToSubscribers(ctx context.Context, post *models.Post) {
-	if subscribers, err := models.ListSubscribers(ctx, post.UserId); err!=nil {
+	if subscribers, err := models.ListSubscribers(ctx, post.UserId); err != nil {
 		return
-	} else if user, err := models.FindUserById(ctx, post.UserId) ; err!=nil {
+	} else if user, err := models.FindUserById(ctx, post.UserId); err != nil {
 		return
 	} else {
 		content := user.FullName + " : " + post.Title + " —— " + "http://everpost.one/post/" + post.PostId
 		if post.IpfsId != "" {
-			content +=  " \n " + "https://ipfs.io/ipfs/" + post.IpfsId
+			content += " \n " + "https://ipfs.io/ipfs/" + post.IpfsId
 		}
 		for _, sub := range subscribers {
 			conversationId := bot.UniqueConversationId(config.ClientId, sub.SubscriberId)

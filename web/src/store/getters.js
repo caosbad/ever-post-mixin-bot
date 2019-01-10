@@ -4,5 +4,8 @@ export default {
   },
   getAssets: state => {
     return state.assets
+  },
+  getLocale: state => {
+    return state.local
   }
 }

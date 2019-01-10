@@ -107,7 +107,7 @@
         </div>
       </div>
       <vue-markdown
-        class="q-my-lg"
+        class="q-my-lg content-container"
         @rendered="(html)=>htmlContent=html"
       >{{post.content}}</vue-markdown>
       <div class="row justify-center q-mt-lg">
@@ -140,8 +140,10 @@
       >
         <vue-disqus
           shortname="everpost"
+          :title="post.title"
           :identifier="post.post_id"
           :url="postLink"
+          @new-comment="comment"
         ></vue-disqus>
       </div>
     </div>
@@ -213,12 +215,14 @@ export default {
     async initData(id) {
       try {
         let post = await this.getPost(id)
+        // if (!post) this.$router.push('/')
         this.post = post
         let user = await this.getUser(post.user_id)
         this.user = user
         this.getSubStatus()
       } catch (e) {
         console.log(e)
+        this.$router.push('/')
       }
     },
     async toggleSub() {
@@ -429,6 +433,25 @@ export default {
     openIPFSUrl() {
       let url = this.post && this.post.ipfs_id ? `${IPFS_GATEWAY}${this.post.ipfs_id}/` : null
       openURL(url)
+    },
+    async comment(comment) {
+      try {
+        let res = await this.send({
+          method: 'notify',
+          params: {
+            id: this.post.post_id,
+            commentId: comment.id,
+            text: comment.text
+          }
+        })
+        if (res.success) {
+          console.log('notify success')
+        } else {
+          console.log('notify failed')
+        }
+      } catch (e) {
+        console.log(e)
+      }
     }
     // done(flag = true, cb = () => {}) {
     //   _.delay(() => {
@@ -512,6 +535,12 @@ export default {
     display: inline-block;
     vertical-align: middle;
     margin: 0 15px;
+  }
+}
+
+.content-container {
+  p + img {
+    width: 80%;
   }
 }
 </style>

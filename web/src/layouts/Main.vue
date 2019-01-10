@@ -273,5 +273,7 @@ export default {
 <style lang="stylus" scoped>
 .user-avatar {
   border-radius: 15px;
+  width: 26px;
+  height: 26px;
 }
 </style>

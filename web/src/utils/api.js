@@ -131,6 +131,9 @@ api.updateDraft = (params) => {
 api.deleteDraft = (params) => {
   return fetch(urls.drafts(), 'delete', params)
 }
+api.notify = (params) => {
+  return fetch(urls.notify(), 'post', params)
+}
 
 // api.deposit = params => {
 //   return createInTransfer(urls.dappId[process.env.NODE_ENV], 'koumei.KMC', params.amount, params.secret, params.secondPassword || '')
