@@ -136,9 +136,9 @@ this.page.title = '${title}'
 this.page.identifier = '${postId}'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 this.callbacks.onNewComment = [function(comment) {
 // TODO
-var xhr = new XMLHttpRequest();
-xhr.open('POST', 'http://everpost.one/notify/${postId}');
-xhr.send({'commentId':comment.id,'text':comment.text});
+// var xhr = new XMLHttpRequest();
+// xhr.open('POST', 'https://everpost.one/notify/${postId}');
+// xhr.send({'commentId':comment.id,'text':comment.text});
 }];
 };
 

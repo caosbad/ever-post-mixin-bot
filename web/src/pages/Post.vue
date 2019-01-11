@@ -144,6 +144,7 @@
           :identifier="post.post_id"
           :url="postLink"
           @new-comment="comment"
+          @ready="ready"
         ></vue-disqus>
       </div>
     </div>
@@ -452,6 +453,12 @@ export default {
       } catch (e) {
         console.log(e)
       }
+    },
+    ready() {
+      // let iframes = document.getElementsByTagName('iframe')
+      // console.log(iframes)
+      // let footer = iframes[0].contentWindow.document.getElementById('disqus-footer')
+      // footer.style.display = 'none'
     }
     // done(flag = true, cb = () => {}) {
     //   _.delay(() => {
